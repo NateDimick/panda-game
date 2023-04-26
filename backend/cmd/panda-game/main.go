@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"pandagame/server"
+	"pandagame/internal/server"
 
 	"go.uber.org/zap"
 )

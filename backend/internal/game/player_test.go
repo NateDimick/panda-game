@@ -10,7 +10,7 @@ func TestPlotObjectiveComplete(t *testing.T) {
 	b := NewBoard()
 	b.AddPlot("p1", GreenBambooPlot, NoImprovement)
 	b.AddPlot("p2", GreenBambooPlot, NoImprovement)
-	b.AddPlot("p7", GreenBambooPlot, WatershedImprovement)
+	b.AddPlot("p7", GreenBambooPlot, WatershedImprovement) // use watershed to get irrigation without placing irrigation on edges to plot
 
 	o := PlotObjective{
 		AnchorColor: GreenBambooPlot,
