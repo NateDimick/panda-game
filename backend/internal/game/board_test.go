@@ -1,6 +1,8 @@
 package game
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -21,6 +23,15 @@ func TestNewBoard(t *testing.T) {
 		edge := b.Edges[eid]
 		assert.NotEmpty(t, edge)
 	}
+}
+
+func TestMarshalBoard(t *testing.T) {
+	b := NewBoard()
+	bb := new(bytes.Buffer)
+	json.NewEncoder(bb).Encode(b)
+	assert.NotEmpty(t, bb.String())
+	b2 := UnmarshalBoard(bb)
+	assert.Equal(t, b, b2)
 }
 
 func TestAddPlot(t *testing.T) {
@@ -50,6 +61,27 @@ func TestEdgeIndex(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(tt *testing.T) {
 			i := edgeIndex(tc.In)
+			assert.Equal(t, tc.Out, i)
+		})
+	}
+}
+
+func TestInverseIndex(t *testing.T) {
+	cases := []struct {
+		Name string
+		In   int
+		Out  int
+	}{
+		{"", 0, 3},
+		{"", 1, 4},
+		{"", 2, 5},
+		{"", 3, 0},
+		{"", 4, 1},
+		{"", 5, 2},
+	}
+	for _, tc := range cases {
+		t.Run(tc.Name, func(tt *testing.T) {
+			i := inverseEdgeIndex(tc.In)
 			assert.Equal(t, tc.Out, i)
 		})
 	}

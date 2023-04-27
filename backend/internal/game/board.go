@@ -1,8 +1,10 @@
 package game
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 )
 
@@ -27,6 +29,11 @@ const (
 	AnyPlot          PlotType = "ANY"
 )
 
+func (p *PlotType) UnmarshalText(b []byte) error {
+	*p = PlotType(string(b))
+	return nil
+}
+
 type ImprovementType string
 
 const (
@@ -36,6 +43,11 @@ const (
 	NoImprovement         ImprovementType = "NONE"
 	AnyImprovement        ImprovementType = "ANY"
 )
+
+func (p *ImprovementType) UnmarshalText(b []byte) error {
+	*p = ImprovementType(string(b))
+	return nil
+}
 
 func ImprovementTypeEqual(a, b ImprovementType) bool {
 	if a == AnyImprovement || b == AnyImprovement {
@@ -118,6 +130,7 @@ func (b *Board) PlotAddImprovement(pid string, it ImprovementType) error {
 		return errors.New("Can't add an improvement where bamboo is already growing")
 	}
 	p.Improvement = Improvement{it, false}
+	b.Plots[pid] = p
 	return nil
 }
 
@@ -134,6 +147,7 @@ func (b *Board) PlotGrowBamboo(pid string) error {
 		return nil
 	}
 	p.Bamboo++
+	b.Plots[pid] = p
 	return nil
 }
 
@@ -146,7 +160,42 @@ func (b *Board) PlotEatBamboo(pid string) error {
 		return errors.New("Can't eat - no bamboo")
 	}
 	p.Bamboo--
+	b.Plots[pid] = p
 	return nil
+}
+
+func (b *Board) EdgeCouldBeIrrigated(eid string) bool {
+	e := b.Edges[eid]
+	if e.Irrigated {
+		return false
+	}
+	p1 := b.Plots[e.Plots[0]]
+	p2 := b.Plots[e.Plots[1]]
+	if p1.Type == FuturePlot || p2.Type == FuturePlot {
+		return false
+	}
+	// if either of the plots this edge is between is irrigated already, and it's not because of a watershed, then this edge can be irrigated
+	if p1.Improvement.Type != WatershedImprovement && b.PlotIsIrrigated(p1.ID) {
+		return true
+	}
+	if p2.Improvement.Type != WatershedImprovement && b.PlotIsIrrigated(p2.ID) {
+		return true
+	}
+	return false
+}
+
+func (b *Board) EdgeAddIrrigation(eid string) {
+	e := b.Edges[eid]
+	e.Irrigated = true
+	b.Edges[eid] = e
+}
+
+func (b *Board) MovePanda(pid string) {
+	b.PandaLocation = pid
+}
+
+func (b *Board) MoveGardener(pid string) {
+	b.GardenerLocation = pid
 }
 
 // returns all the tiles is a row in the direction of eidx (edge index)
@@ -204,6 +253,17 @@ func (b *Board) AllImprovablePlots() []string {
 		}
 	}
 	return plotIDs
+}
+
+// gets all ids of edges that are not irrigated but could be irrigated
+func (b *Board) AllIrrigatableEdges() []string {
+	edgeIDs := make([]string, 0)
+	for eid := range b.Edges {
+		if b.EdgeCouldBeIrrigated(eid) {
+			edgeIDs = append(edgeIDs, eid)
+		}
+	}
+	return edgeIDs
 }
 
 func (b *Board) AddPlot(pid string, pt PlotType, it ImprovementType) {
@@ -367,6 +427,16 @@ func NewBoard() *Board {
 		b.Plots[futurePlotIDs[i]] = future
 	}
 
+	return b
+}
+
+// Call this to deserialize a Board
+// it re-populates private fields that json does not serialize
+func UnmarshalBoard(s io.Reader) *Board {
+	b := new(Board)
+	json.NewDecoder(s).Decode(b)
+	b.edgeCount = len(b.Edges)
+	b.plotCount = len(b.Plots)
 	return b
 }
 

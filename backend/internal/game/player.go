@@ -1,5 +1,9 @@
 package game
 
+import (
+	"encoding/json"
+)
+
 type Player struct {
 	Name string
 	// a unique identifier for the player
@@ -36,7 +40,12 @@ const (
 	PlotObjectiveType    ObjectiveType = "PLOT"
 )
 
-type Objective interface {
+func (p *ObjectiveType) UnmarshalText(b []byte) error {
+	*p = ObjectiveType(string(b))
+	return nil
+}
+
+type ObjectiveChecker interface {
 	// takes the player and the board (type TBD) and
 	IsComplete(Player, Board) bool
 	// the value of the objective, if complete
@@ -45,11 +54,46 @@ type Objective interface {
 	Type() ObjectiveType
 }
 
+type Objective struct {
+	ObjectiveChecker
+}
+
+func (o *Objective) UnmarshalJSON(b []byte) error {
+	m := make(map[string]interface{})
+	json.Unmarshal(b, &m)
+	ob := m["ObjectiveChecker"].(map[string]interface{})
+
+	bs, _ := json.Marshal(ob)
+
+	switch ObjectiveType(ob["OT"].(string)) {
+	case PandaObjectiveType:
+		ob := new(PandaObjective)
+		if err := json.Unmarshal(bs, ob); err != nil {
+			return err
+		}
+		o.ObjectiveChecker = *ob
+	case PlotObjectiveType:
+		ob := new(PlotObjective)
+		if err := json.Unmarshal(bs, ob); err != nil {
+			return err
+		}
+		o.ObjectiveChecker = *ob
+	case GardnerObjectiveType:
+		ob := new(GardnerObjective)
+		if err := json.Unmarshal(bs, ob); err != nil {
+			return err
+		}
+		o.ObjectiveChecker = *ob
+	}
+	return nil
+}
+
 type PandaObjective struct {
 	GreenCount  int
 	YellowCount int
 	PinkCount   int
 	Value       int
+	OT          ObjectiveType
 }
 
 func (o PandaObjective) Points() int {
@@ -73,6 +117,7 @@ type GardnerObjective struct {
 	Count       int
 	Improvement ImprovementType
 	Value       int
+	OT          ObjectiveType
 }
 
 func (o GardnerObjective) Points() int {
@@ -104,6 +149,7 @@ type PlotObjective struct {
 	Value       int
 	AnchorColor PlotType
 	Neighbors   [6]PlotType
+	OT          ObjectiveType
 }
 
 func (o PlotObjective) Points() int {
