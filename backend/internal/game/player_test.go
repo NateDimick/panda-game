@@ -19,13 +19,13 @@ func TestMarshalPlayer(t *testing.T) {
 				Value:       5,
 				OT:          PlotObjectiveType,
 			}},
-			{GardnerObjective{
+			{GardenerObjective{
 				Color:       PinkBambooPlot,
 				Improvement: AnyImprovement,
 				Height:      4,
 				Count:       4,
 				Value:       8,
-				OT:          GardnerObjectiveType,
+				OT:          GardenerObjectiveType,
 			}},
 			{PandaObjective{
 				GreenCount:  1,

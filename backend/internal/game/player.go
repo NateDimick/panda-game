@@ -16,28 +16,41 @@ type Player struct {
 	Bamboo BambooReserve
 	// the player's improvement reserve (a count of each type)
 	Improvements ImprovementReserve
-	// the objective cards in the player's possession, complete or incomplete
+	// the objective cards in the player's possession, incomplete
 	Objectives []Objective
+	// Objectives in the player's possession that have been completed
+	CompleteObjectives []Objective
 }
 
-type BambooReserve struct {
-	Green  int
-	Yellow int
-	Pink   int
+type BambooReserve map[PlotType]int
+
+type ImprovementReserve map[ImprovementType]int
+
+func (i ImprovementReserve) IsEmpty() bool {
+	isum := 0
+	for _, v := range i {
+		isum += v
+	}
+	return isum == 0
 }
 
-type ImprovementReserve struct {
-	Watersheds   int
-	Fertilizers  int
-	Enclosements int
+func (i ImprovementReserve) AvailableImprovements() []ImprovementType {
+	s := make([]ImprovementType, 0)
+	for k, v := range i {
+		if v > 0 {
+			s = append(s, k)
+		}
+	}
+	return s
 }
 
 type ObjectiveType string
 
 const (
-	PandaObjectiveType   ObjectiveType = "PANDA"
-	GardnerObjectiveType ObjectiveType = "GARDNER"
-	PlotObjectiveType    ObjectiveType = "PLOT"
+	PandaObjectiveType    ObjectiveType = "PANDA"
+	GardenerObjectiveType ObjectiveType = "GARDENER"
+	PlotObjectiveType     ObjectiveType = "PLOT"
+	EmperorObjectiveType  ObjectiveType = "EMPEROR"
 )
 
 func (p *ObjectiveType) UnmarshalText(b []byte) error {
@@ -50,7 +63,7 @@ type ObjectiveChecker interface {
 	IsComplete(Player, Board) bool
 	// the value of the objective, if complete
 	Points() int
-	// the type of the objective, either PANDA, GARDNER or PLOT
+	// the type of the objective, either PANDA, GARDENER or PLOT
 	Type() ObjectiveType
 }
 
@@ -78,8 +91,8 @@ func (o *Objective) UnmarshalJSON(b []byte) error {
 			return err
 		}
 		o.ObjectiveChecker = *ob
-	case GardnerObjectiveType:
-		ob := new(GardnerObjective)
+	case GardenerObjectiveType:
+		ob := new(GardenerObjective)
 		if err := json.Unmarshal(bs, ob); err != nil {
 			return err
 		}
@@ -105,13 +118,13 @@ func (o PandaObjective) Type() ObjectiveType {
 }
 
 func (o PandaObjective) IsComplete(p Player, b Board) bool {
-	greenOK := p.Bamboo.Green >= o.GreenCount
-	yellowOK := p.Bamboo.Yellow >= o.YellowCount
-	pinkOK := p.Bamboo.Pink >= o.PinkCount
+	greenOK := p.Bamboo[GreenBambooPlot] >= o.GreenCount
+	yellowOK := p.Bamboo[YellowBambooPlot] >= o.YellowCount
+	pinkOK := p.Bamboo[PinkBambooPlot] >= o.PinkCount
 	return greenOK && yellowOK && pinkOK
 }
 
-type GardnerObjective struct {
+type GardenerObjective struct {
 	Color       PlotType
 	Height      int
 	Count       int
@@ -120,15 +133,15 @@ type GardnerObjective struct {
 	OT          ObjectiveType
 }
 
-func (o GardnerObjective) Points() int {
+func (o GardenerObjective) Points() int {
 	return o.Value
 }
 
-func (o GardnerObjective) Type() ObjectiveType {
-	return GardnerObjectiveType
+func (o GardenerObjective) Type() ObjectiveType {
+	return GardenerObjectiveType
 }
 
-func (o GardnerObjective) IsComplete(p Player, b Board) bool {
+func (o GardenerObjective) IsComplete(p Player, b Board) bool {
 	okPlots := 0
 	for _, plot := range b.Plots {
 		improvementOK := ImprovementTypeEqual(o.Improvement, plot.Improvement.Type)
@@ -193,4 +206,18 @@ func (o PlotObjective) IsComplete(p Player, b Board) bool {
 		}
 	}
 	return false
+}
+
+type EmperorObjective struct{}
+
+func (o EmperorObjective) Points() int {
+	return 2
+}
+
+func (o EmperorObjective) Type() ObjectiveType {
+	return EmperorObjectiveType
+}
+
+func (o EmperorObjective) IsComplete() bool {
+	return true
 }

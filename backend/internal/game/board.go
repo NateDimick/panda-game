@@ -2,7 +2,6 @@ package game
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -121,47 +120,32 @@ func (b *Board) PlotIsIrrigated(pid string) bool {
 	return false
 }
 
-func (b *Board) PlotAddImprovement(pid string, it ImprovementType) error {
+func (b *Board) PlotAddImprovement(pid string, it ImprovementType) {
 	p := b.Plots[pid]
-	if p.Improvement.Type != NoImprovement {
-		return errors.New("Tile already has an improvement")
-	}
-	if p.Bamboo > 0 {
-		return errors.New("Can't add an improvement where bamboo is already growing")
-	}
 	p.Improvement = Improvement{it, false}
 	b.Plots[pid] = p
-	return nil
 }
 
-func (b *Board) PlotGrowBamboo(pid string) error {
+func (b *Board) PlotGrowBamboo(pid string) {
 	p := b.Plots[pid]
-	if !b.PlotIsIrrigated(pid) {
-		return errors.New("Bamboo can only grow on irrigated tiles")
+	if !b.PlotIsIrrigated(pid) || p.Bamboo == 4 {
+		return
 	}
-	if p.Bamboo == 4 {
-		return errors.New("Bamboo is already at max height")
-	}
-	if p.Improvement.Type == FertilizerImprovement {
-		p.Bamboo = int(math.Min(4, float64(p.Bamboo)+2))
-		return nil
+	if p.Bamboo < 3 && p.Improvement.Type == FertilizerImprovement {
+		p.Bamboo++ // extra growth
 	}
 	p.Bamboo++
 	b.Plots[pid] = p
-	return nil
 }
 
-func (b *Board) PlotEatBamboo(pid string) error {
+func (b *Board) PlotEatBamboo(pid string) PlotType {
 	p := b.Plots[pid]
-	if p.Improvement.Type == EnclosureImprovement {
-		return errors.New("Can't eat from this tile")
-	}
-	if p.Bamboo == 0 {
-		return errors.New("Can't eat - no bamboo")
+	if p.Bamboo == 0 || p.Improvement.Type == EnclosureImprovement {
+		return AnyPlot // anyplot == signal of no bamboo eaten
 	}
 	p.Bamboo--
 	b.Plots[pid] = p
-	return nil
+	return p.Type
 }
 
 func (b *Board) EdgeCouldBeIrrigated(eid string) bool {
@@ -190,12 +174,15 @@ func (b *Board) EdgeAddIrrigation(eid string) {
 	b.Edges[eid] = e
 }
 
-func (b *Board) MovePanda(pid string) {
+// returns AnyType plot if no bamboo is eaten
+func (b *Board) MovePanda(pid string) PlotType {
 	b.PandaLocation = pid
+	return b.PlotEatBamboo(pid) // needs to place bamboo in player's inventory
 }
 
 func (b *Board) MoveGardener(pid string) {
 	b.GardenerLocation = pid
+	b.PlotGrowBamboo(pid)
 }
 
 // returns all the tiles is a row in the direction of eidx (edge index)
@@ -219,6 +206,17 @@ func (b *Board) LegalMovesFromPlot(pid string) []string {
 		plotIds = append(plotIds, b.TileIDsInRow(pid, i)...)
 	}
 	return plotIds
+}
+
+// returns the plotids of all non-future plots
+func (b *Board) AllPresentPlots() []string {
+	plotIDs := make([]string, 0)
+	for pid, plot := range b.Plots {
+		if plot.Type != FuturePlot {
+			plotIDs = append(plotIDs, pid)
+		}
+	}
+	return plotIDs
 }
 
 // gets a list of all plots that can are irrigated and thus can be grown upon
@@ -457,32 +455,4 @@ func edgeIndex(i int) int {
 // (0 and 3, 1 and 4, 2 and 5)
 func inverseEdgeIndex(i int) int {
 	return edgeIndex(i + 3)
-}
-
-func DrawTiles() {
-
-}
-
-func PlaceTile() {
-
-}
-
-func PlaceIrrigation() {
-
-}
-
-func PlaceImprovement() {
-
-}
-
-func MoveGardener() {
-
-}
-
-func MovePanda() {
-
-}
-
-func GrowBamboo() {
-
 }
