@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+
+	"golang.org/x/exp/slices"
 )
 
 type Board struct {
@@ -158,12 +160,16 @@ func (b *Board) EdgeCouldBeIrrigated(eid string) bool {
 	if p1.Type == FuturePlot || p2.Type == FuturePlot {
 		return false
 	}
-	// if either of the plots this edge is between is irrigated already, and it's not because of a watershed, then this edge can be irrigated
-	if p1.Improvement.Type != WatershedImprovement && b.PlotIsIrrigated(p1.ID) {
-		return true
-	}
-	if p2.Improvement.Type != WatershedImprovement && b.PlotIsIrrigated(p2.ID) {
-		return true
+	for _, p := range []Plot{p1, p2} {
+
+		i := slices.Index(p.Edges[:], eid)
+		for _, dx := range []int{1, -1} {
+			adjacentEdgeId := p.Edges[edgeIndex(i+dx)]
+			adjacentEdge := b.Edges[adjacentEdgeId]
+			if adjacentEdge.Irrigated {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -203,7 +209,8 @@ func (b *Board) TileIDsInRow(pid string, eidx int) []string {
 func (b *Board) LegalMovesFromPlot(pid string) []string {
 	plotIds := make([]string, 0)
 	for i := 0; i < 6; i++ {
-		plotIds = append(plotIds, b.TileIDsInRow(pid, i)...)
+		nextPlot := b.PlotNeighbor(pid, i)
+		plotIds = append(plotIds, b.TileIDsInRow(nextPlot.ID, i)...)
 	}
 	return plotIds
 }
@@ -223,8 +230,8 @@ func (b *Board) AllPresentPlots() []string {
 // useful for Rain weather
 func (b *Board) AllIrrigatedPlots() []string {
 	plotIDs := make([]string, 0)
-	for pid := range b.Plots {
-		if b.PlotIsIrrigated(pid) {
+	for pid, plot := range b.Plots {
+		if b.PlotIsIrrigated(pid) && plot.Type != PondPlot && plot.Type != FuturePlot {
 			plotIDs = append(plotIDs, pid)
 		}
 	}
@@ -353,6 +360,7 @@ func (b *Board) AddPlot(pid string, pt PlotType, it ImprovementType) {
 			nextEdgeIdx = edgeIndex(nextEdgeIdx + edgeIdxStep)
 		}
 		b.Plots[futurePid] = futurePlot
+		p = b.Plots[pid]
 	}
 
 }
