@@ -3,6 +3,7 @@ package game
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,12 +46,20 @@ func TestMarshalPlayer(t *testing.T) {
 	assert.Equal(t, p, p2)
 }
 
-func TestWTFFFFFF(t *testing.T) {
-	o := &PandaObjective{1, 2, 3, 7, PandaObjectiveType}
-	bs, _ := json.Marshal(o)
-	o2 := new(PandaObjective)
-	json.Unmarshal(bs, o2)
-	assert.Equal(t, o, o2)
+func TestImprovementReserve(t *testing.T) {
+	var ir ImprovementReserve = map[ImprovementType]int{
+		FertilizerImprovement: 1,
+		WatershedImprovement:  1,
+		EnclosureImprovement:  1,
+	}
+	assert.False(t, ir.IsEmpty())
+	assert.Equal(t, 3, len(ir.AvailableImprovements()))
+	ir[FertilizerImprovement] = 0
+	assert.Equal(t, 2, len(ir.AvailableImprovements()))
+	ir[WatershedImprovement] = 0
+	ir[EnclosureImprovement] = 0
+	assert.True(t, ir.IsEmpty())
+	assert.Empty(t, ir.AvailableImprovements())
 }
 
 func TestPlotObjectiveComplete(t *testing.T) {
@@ -81,4 +90,78 @@ func TestPlotObjectiveNotComplete(t *testing.T) {
 
 	complete := o.IsComplete(Player{}, *b)
 	assert.False(t, complete)
+}
+
+func TestPandaObjectiveComplete(t *testing.T) {
+	b := NewBoard()
+	o := PandaObjective{
+		GreenCount:  1,
+		YellowCount: 2,
+	}
+	p := Player{
+		Bamboo: map[PlotType]int{
+			GreenBambooPlot:  3,
+			YellowBambooPlot: 2,
+			PinkBambooPlot:   1,
+		},
+	}
+
+	assert.True(t, o.IsComplete(p, *b))
+}
+
+func TestPandaObjectiveNotComplete(t *testing.T) {
+	b := NewBoard()
+	o := PandaObjective{
+		PinkCount:   3,
+		YellowCount: 3,
+	}
+	p := Player{
+		Bamboo: map[PlotType]int{
+			GreenBambooPlot:  3,
+			YellowBambooPlot: 2,
+			PinkBambooPlot:   1,
+		},
+	}
+
+	assert.False(t, o.IsComplete(p, *b))
+}
+
+func TestGardenerObjectiveComplete(t *testing.T) {
+	o := GardenerObjective{
+		Color:       GreenBambooPlot,
+		Height:      3,
+		Count:       4,
+		Improvement: AnyImprovement,
+	}
+	b := NewBoard()
+	for i := 1; i < 5; i++ {
+		pid := fmt.Sprintf("p%d", i)
+		b.AddPlot(pid, GreenBambooPlot, NoImprovement)
+		b.PlotGrowBamboo(pid)
+		b.PlotGrowBamboo(pid)
+		b.PlotGrowBamboo(pid)
+	}
+	p := Player{}
+
+	assert.True(t, o.IsComplete(p, *b))
+}
+
+func TestGardenerObjectiveNotComplete(t *testing.T) {
+	o := GardenerObjective{
+		Color:       GreenBambooPlot,
+		Height:      3,
+		Count:       4,
+		Improvement: AnyImprovement,
+	}
+	b := NewBoard()
+	for i := 1; i < 5; i++ {
+		pid := fmt.Sprintf("p%d", i)
+		b.AddPlot(pid, GreenBambooPlot, NoImprovement)
+		for j := 0; j < i; j++ {
+			b.PlotGrowBamboo(pid)
+		}
+	}
+	p := Player{}
+
+	assert.False(t, o.IsComplete(p, *b))
 }
