@@ -8,6 +8,18 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+type WeatherType string
+
+const (
+	SunWeather    WeatherType = "SUN"    // Sun allows the player to take a third action
+	RainWeather   WeatherType = "RAIN"   // Rain allows the player to grow one bamboo shoot by 1 unit
+	WindWeather   WeatherType = "WIND"   // Wind allows the player to take the same action twice (not required, just allowed)
+	BoltWeather   WeatherType = "BOLT"   // Bolt allows the player to move the panda anywhere
+	CloudWeather  WeatherType = "CLOUD"  // Cloud allows the player to take one available improvement. If no improvements are available, then this becomes a choice
+	ChoiceWeather WeatherType = "CHOICE" // Choice allows the player to choose which of the 5 above weather conditions for their turn.
+	NoWeather     WeatherType = "NONE"
+)
+
 type GameState struct {
 	// what has been placed on the board and where
 	Board *Board
@@ -27,6 +39,8 @@ type GameState struct {
 	GameLog []string
 	// messages sent by players to the room
 	ChatLog []ChatMessage
+	// playerID of player who won emperor
+	EmperorWinner string
 }
 
 type DeckPlot struct {
@@ -35,18 +49,12 @@ type DeckPlot struct {
 }
 
 type Turn struct {
-	PlayerID          string
-	ActionsUsed       []ActionType // the actions the player has already taken
-	CurrentCommand    PromptType
-	CurrentOptions    []interface{}
-	CurrentOptionType SelectType
-	ContextSelection  interface{} // for actions that require 2 choices, this is the first choice
-	Weather           WeatherType
-	Pid               string
-}
-
-func NewTurn() Turn {
-	return Turn{Weather: NoWeather}
+	PlayerID         string
+	Order            int
+	ActionsUsed      []ActionType // the actions the player has already taken
+	CurrentPrompt    Prompt
+	ContextSelection interface{} // for actions that require 2 choices, this is the first choice
+	Weather          WeatherType
 }
 
 type ChatMessage struct {
@@ -88,8 +96,34 @@ func NewGame() *GameState {
 		PlotDeck:              pd,
 		GameLog:               make([]string, 0),
 		ChatLog:               make([]ChatMessage, 0),
+		CurrentTurn: &Turn{
+			Order:       0,
+			Weather:     NoWeather,
+			ActionsUsed: make([]ActionType, 0),
+		},
 	}
 	return g
+}
+
+func (g *GameState) AddPlayers(ps []*Player) {
+	// shuffle player order
+	rand.Shuffle(len(ps), func(i, j int) {
+		ps[1], ps[j] = ps[j], ps[i]
+	})
+	g.Players = ps
+	g.CurrentTurn.Order = len(ps) - 1 // when NextTurn is called the first time, it will increment up to player 0
+	g.CurrentTurn.PlayerID = ps[0].ID
+}
+
+func (g *GameState) NextTurn() Turn {
+	order := (g.CurrentTurn.Order + 1) % len(g.Players)
+	player := g.Players[order]
+	return Turn{
+		Order:       order,
+		PlayerID:    player.ID,
+		Weather:     NoWeather,
+		ActionsUsed: make([]ActionType, 0),
+	}
 }
 
 func (g *GameState) DrawPlots() []DeckPlot {
@@ -103,21 +137,16 @@ func (g *GameState) DrawPlots() []DeckPlot {
 	return plotOptions
 }
 
-func (g *GameState) ReturnPlots(usedPlot map[string]interface{}, options []interface{}) {
+func (g *GameState) ReturnPlots(usedPlot DeckPlot, options []DeckPlot) {
 	usedSkipped := false
-	for _, i := range options {
-		p := i.(map[string]interface{})
+	for _, opt := range options {
 		if !usedSkipped {
-			if p["Type"] == usedPlot["Type"] && p["Improvement"] == usedPlot["Improvement"] {
+			if opt.Type == usedPlot.Type && opt.Improvement == usedPlot.Improvement {
 				usedSkipped = true
 				continue
 			}
 		}
-		dp := DeckPlot{
-			Type:        PlotType(p["Type"].(string)),
-			Improvement: ImprovementType(p["Improvement"].(string)),
-		}
-		g.PlotDeck = append(g.PlotDeck, dp)
+		g.PlotDeck = append(g.PlotDeck, opt)
 	}
 
 }
@@ -138,7 +167,8 @@ func (g *GameState) DrawObjective(ot ObjectiveType) Objective {
 	return o
 }
 
-func (g GameState) GetPlayer(pid string) *Player {
+func (g GameState) GetCurrentPlayer() *Player {
+	pid := g.CurrentTurn.PlayerID
 	for _, p := range g.Players {
 		if p.ID == pid {
 			return p
@@ -155,11 +185,11 @@ func (g *GameState) NextChooseActionPrompt() Prompt {
 		Pid:        NewPromptID(),
 	}
 
-	currentPlayer := g.GetPlayer(g.CurrentTurn.PlayerID)
+	currentPlayer := g.GetCurrentPlayer()
 
-	options := make([]interface{}, 0) // values will be ActionType
+	options := make([]ActionType, 0) // values will be ActionType
 
-	options = append(options, availableRegularActions(g.CurrentTurn.ActionsUsed, g.CurrentTurn.Weather))
+	options = append(options, g.availableRegularActions()...)
 
 	couldEndTurn := false
 
@@ -178,11 +208,16 @@ func (g *GameState) NextChooseActionPrompt() Prompt {
 	if len(options) > 0 && couldEndTurn {
 		options = append(options, EndTurn)
 	}
-	p.SelectFrom = options
+	if len(options) == 0 {
+		return Prompt{Action: NextPlayerTurn}
+	}
+	p.SelectFrom = ConvertToInterfaceSlice(options)
 	return p
 }
 
-func availableRegularActions(used []ActionType, weather WeatherType) []ActionType {
+func (g *GameState) availableRegularActions() []ActionType {
+	used := g.CurrentTurn.ActionsUsed
+	weather := g.CurrentTurn.Weather
 	if len(used) == 2 && weather != SunWeather {
 		return []ActionType{}
 	}
@@ -190,24 +225,35 @@ func availableRegularActions(used []ActionType, weather WeatherType) []ActionTyp
 		return []ActionType{}
 	}
 	regularActions := []ActionType{PlacePlot, MovePanda, MoveGardener, CollectIrrigation, DrawObjective}
-	if weather == WindWeather {
-		return regularActions
+	if weather != WindWeather {
+		for _, a := range used {
+			i := slices.Index(regularActions, a)
+			regularActions = slices.Delete(regularActions, i, i+1)
+		}
 	}
-	for _, a := range used {
-		i := slices.Index(regularActions, a)
+	if g.IrrigationReserve == 0 {
+		i := slices.Index(regularActions, CollectIrrigation)
+		regularActions = slices.Delete(regularActions, i, i+1)
+	}
+	if len(g.PlotDeck) == 0 {
+		i := slices.Index(regularActions, PlacePlot)
+		regularActions = slices.Delete(regularActions, i, i+1)
+	}
+	if len(g.AvailableObjectiveTypes()) == 0 {
+		i := slices.Index(regularActions, DrawObjective)
 		regularActions = slices.Delete(regularActions, i, i+1)
 	}
 	return regularActions
 }
 
 func (g *GameState) ValidatePlayerAction(action PromptResponse) bool {
-	if g.CurrentTurn.CurrentCommand != action.Action {
+	if g.CurrentTurn.CurrentPrompt.Action != action.Action {
 		return false
 	}
-	if g.CurrentTurn.Pid != action.Pid {
+	if g.CurrentTurn.CurrentPrompt.Pid != action.Pid {
 		return false
 	}
-	for _, opt := range g.CurrentTurn.CurrentOptions {
+	for _, opt := range g.CurrentTurn.CurrentPrompt.SelectFrom {
 		if opt == action.Selection { // this is a toss up whether it will work or not (because custom types) but my gut says both of these will be freshly json parsed as generic json types (string or map[string]interface{}) so the comparison will be ok
 			return true
 		}
@@ -215,26 +261,26 @@ func (g *GameState) ValidatePlayerAction(action PromptResponse) bool {
 	return false
 }
 
+// process a player's choice and return the next prompt
 func (g *GameState) ProcessPlayerAction(action PromptResponse) Prompt {
 	switch action.Action {
 	case ChooseAction:
 		// the player has chosen an action. They require a next prompt
-		at := ActionType(action.Selection.(string))
-		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
+		at := GetSelection(action.Action, action.Selection).(ActionType)
 		return g.PromptForAction(at)
 	case ChooseWeather:
-		//
-		g.CurrentTurn.Weather = WeatherType(action.Selection.(string))
+		// set the weather and prompt next
+		g.CurrentTurn.Weather = GetSelection(action.Action, action.Selection).(WeatherType)
 		return g.NextChooseActionPrompt()
 	case ChooseGrowth:
-		// grow 1 bamboo on the selected plot, the prompt next
+		// grow 1 bamboo on the selected plot, then prompt next
 		g.Board.PlotGrowBamboo(action.Selection.(string))
 		return g.NextChooseActionPrompt()
 	case ChoosePandaDestination:
 		// eat 1 bamboo on the selected plot, then prompt next
 		bamboo := g.Board.MovePanda(action.Selection.(string))
 		if bamboo != AnyPlot && bamboo != PondPlot {
-			p := g.GetPlayer(g.CurrentTurn.PlayerID)
+			p := g.GetCurrentPlayer()
 			p.Bamboo[bamboo]++
 		}
 		return g.NextChooseActionPrompt()
@@ -243,22 +289,31 @@ func (g *GameState) ProcessPlayerAction(action PromptResponse) Prompt {
 		g.Board.MoveGardener(action.Selection.(string))
 		return g.NextChooseActionPrompt()
 	case ChooseImprovementDestination:
-		//
-		g.Board.PlotAddImprovement(action.Selection.(string), ImprovementType(g.CurrentTurn.ContextSelection.(string)))
-		g.NextChooseActionPrompt()
+		// place the improvement the player chose earlier on the plot they just chose
+		it := GetSelection(ChooseImprovementToUse, g.CurrentTurn.ContextSelection).(ImprovementType)
+		g.Board.PlotAddImprovement(action.Selection.(string), it)
+		return g.NextChooseActionPrompt()
 	case ChoosePlotDestination:
 		//
-		selectedPlot := g.CurrentTurn.ContextSelection.(map[string]interface{})
-		g.Board.AddPlot(action.Selection.(string), PlotType(selectedPlot["Type"].(string)), ImprovementType(selectedPlot["Improvement"].(string)))
-		g.ReturnPlots(selectedPlot, g.CurrentTurn.CurrentOptions)
+		selectedPlot := GetSelection(ChoosePlot, g.CurrentTurn.ContextSelection).(DeckPlot)
+		g.Board.AddPlot(action.Selection.(string), selectedPlot.Type, selectedPlot.Improvement)
+		return g.NextChooseActionPrompt()
 	case ChooseIrrigationDestination:
 		//
 		g.Board.EdgeAddIrrigation(action.Selection.(string))
-		// TODO: remove irrigation from player's inventory
+		p := g.GetCurrentPlayer()
+		p.Irrigations--
 		return g.NextChooseActionPrompt()
 	case ChoosePlot:
 		//
 		g.CurrentTurn.ContextSelection = action.Selection
+		selectedPlot := GetSelection(ChoosePlot, action.Selection).(DeckPlot)
+		drawnPlots := make([]DeckPlot, 0)
+		for _, opt := range g.CurrentTurn.CurrentPrompt.SelectFrom {
+			dp := GetSelection(ChoosePlot, opt).(DeckPlot)
+			drawnPlots = append(drawnPlots, dp)
+		}
+		g.ReturnPlots(selectedPlot, drawnPlots)
 		options := g.Board.AllFuturePlots()
 		return Prompt{
 			Action:     ChoosePlotDestination,
@@ -270,7 +325,9 @@ func (g *GameState) ProcessPlayerAction(action PromptResponse) Prompt {
 	case ChooseImprovementToUse:
 		//
 		g.CurrentTurn.ContextSelection = action.Selection
-		// TODO: remove improvement from player's inventory
+		it := GetSelection(action.Action, action.Selection).(ImprovementType)
+		p := g.GetCurrentPlayer()
+		p.Improvements[it]--
 		options := g.Board.AllImprovablePlots()
 		return Prompt{
 			Action:     ChooseImprovementDestination,
@@ -280,13 +337,17 @@ func (g *GameState) ProcessPlayerAction(action PromptResponse) Prompt {
 			Pid:        NewPromptID(),
 		}
 	case ChooseImprovementToStash:
-		p := g.GetPlayer(g.CurrentTurn.PlayerID)
-		p.Improvements[ImprovementType(action.Selection.(string))]++
+		//
+		p := g.GetCurrentPlayer()
+		it := GetSelection(action.Action, action.Selection).(ImprovementType)
+		p.Improvements[it]++
+		g.AvailableImprovements[it]--
 		return g.NextChooseActionPrompt()
 	case ChooseObjectiveType:
 		//
-		o := g.DrawObjective(ObjectiveType(action.Selection.(string)))
-		p := g.GetPlayer(g.CurrentTurn.PlayerID)
+		ot := GetSelection(action.Action, action.Selection).(ObjectiveType)
+		o := g.DrawObjective(ot)
+		p := g.GetCurrentPlayer()
 		p.Objectives = append(p.Objectives, o)
 		return g.NextChooseActionPrompt()
 	case RollDie:
@@ -347,13 +408,14 @@ func (g *GameState) ProcessPlayerAction(action PromptResponse) Prompt {
 			return g.NextChooseActionPrompt()
 		}
 	}
-	return Prompt{}
+	return Prompt{Action: NextPlayerTurn} // this line *should* be unreachable with proper PromptResponse validation
 }
 
 func (g *GameState) PromptForAction(at ActionType) Prompt {
 	switch at {
 	case PlacePlot:
 		//
+		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
 		options := g.DrawPlots()
 		return Prompt{
 			Action:     ChoosePlot,
@@ -364,11 +426,13 @@ func (g *GameState) PromptForAction(at ActionType) Prompt {
 		}
 	case CollectIrrigation:
 		//
-		p := g.GetPlayer(g.CurrentTurn.PlayerID)
+		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
+		p := g.GetCurrentPlayer()
 		p.Irrigations++
 		return g.NextChooseActionPrompt()
 	case MovePanda:
 		//
+		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
 		options := g.Board.LegalMovesFromPlot(g.Board.PandaLocation)
 		return Prompt{
 			Action:     ChoosePandaDestination,
@@ -379,6 +443,7 @@ func (g *GameState) PromptForAction(at ActionType) Prompt {
 		}
 	case MoveGardener:
 		//
+		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
 		options := g.Board.LegalMovesFromPlot(g.Board.GardenerLocation)
 		return Prompt{
 			Action:     ChooseGardenerDestination,
@@ -389,6 +454,7 @@ func (g *GameState) PromptForAction(at ActionType) Prompt {
 		}
 	case DrawObjective:
 		//
+		g.CurrentTurn.ActionsUsed = append(g.CurrentTurn.ActionsUsed, at)
 		options := g.AvailableObjectiveTypes()
 		return Prompt{
 			Action:     ChooseObjectiveType,
@@ -409,7 +475,7 @@ func (g *GameState) PromptForAction(at ActionType) Prompt {
 		}
 	case PlaceImprovement:
 		//
-		p := g.GetPlayer(g.CurrentTurn.PlayerID)
+		p := g.GetCurrentPlayer()
 		options := p.Improvements.AvailableImprovements()
 		return Prompt{
 			Action:     ChooseImprovementToUse,
@@ -421,6 +487,50 @@ func (g *GameState) PromptForAction(at ActionType) Prompt {
 	case EndTurn:
 		fallthrough
 	default:
-		return Prompt{}
+		return Prompt{Action: NextPlayerTurn}
 	}
+}
+
+func (g *GameState) CompleteObjectives() {
+	p := g.GetCurrentPlayer()
+	incomplete := make([]Objective, 0)
+	for _, o := range p.Objectives {
+		if o.IsComplete(*p, *g.Board) {
+			p.CompleteObjectives = append(p.CompleteObjectives, o)
+		} else {
+			incomplete = append(incomplete, o)
+		}
+	}
+	if g.awardEmperorCard(p) {
+		p.CompleteObjectives = append(p.CompleteObjectives, Objective{EmperorObjective{}})
+	}
+	p.Objectives = incomplete
+}
+
+func (g *GameState) awardEmperorCard(p *Player) bool {
+	if g.EmperorWinner != "" {
+		return false
+	}
+	players := len(g.Players)
+	completed := len(p.CompleteObjectives)
+	if completed >= (11 - players) { // 2 player = 9 objectives, 3 p = 8o, 4 p = 7o
+		g.EmperorWinner = p.ID
+		return true
+	}
+	return false
+}
+
+var roll func(int) int = rand.Intn
+
+// roll the weather die. The outcome depends on how many improvements are available.
+func RollWeatherDie(improvements bool) WeatherType {
+	var w [6]WeatherType
+	if improvements {
+		w = [6]WeatherType{SunWeather, RainWeather, WindWeather, BoltWeather, CloudWeather, ChoiceWeather}
+	} else {
+		w = [6]WeatherType{SunWeather, RainWeather, WindWeather, BoltWeather, ChoiceWeather, ChoiceWeather}
+	}
+	r := roll(6)
+
+	return w[r]
 }

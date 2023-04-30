@@ -59,7 +59,7 @@ func (p *ObjectiveType) UnmarshalText(b []byte) error {
 }
 
 type ObjectiveChecker interface {
-	// takes the player and the board (type TBD) and
+	// takes the player and the board and checks if the objective is satisfied
 	IsComplete(Player, Board) bool
 	// the value of the objective, if complete
 	Points() int
@@ -223,6 +223,6 @@ func (o EmperorObjective) Type() ObjectiveType {
 	return EmperorObjectiveType
 }
 
-func (o EmperorObjective) IsComplete() bool {
+func (o EmperorObjective) IsComplete(Player, Board) bool {
 	return true
 }
