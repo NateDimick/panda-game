@@ -1,0 +1,45 @@
+{
+    "Name": "test dude",
+    "ID": "me",
+    "Order": 0,
+    "Irrigations": 0,
+    "Bamboo": null,
+    "Improvements": null,
+    "Objectives": [
+        {
+            "ObjectiveChecker": {
+                "Value": 5,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ],
+                "OT": "PLOT"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "Color": "PINK_BAMBOO",
+                "Height": 4,
+                "Count": 4,
+                "Improvement": "ANY",
+                "Value": 8,
+                "OT": "GARDENER"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "GreenCount": 1,
+                "YellowCount": 1,
+                "PinkCount": 1,
+                "Value": 6,
+                "OT": "PANDA"
+            }
+        }
+    ],
+    "CompleteObjectives": null
+}

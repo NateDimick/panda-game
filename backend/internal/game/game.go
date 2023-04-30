@@ -1,6 +1,10 @@
 package game
 
 import (
+	"encoding/json"
+	"errors"
+	"math/rand"
+
 	"golang.org/x/exp/slices"
 )
 
@@ -15,6 +19,8 @@ type GameState struct {
 	PlotDeck []DeckPlot
 	// unused improvements
 	AvailableImprovements ImprovementReserve
+	// number of irrigations available
+	IrrigationReserve int
 	// undrawn objectives
 	ObjectiveDecks map[ObjectiveType][]Objective
 	// messages sent by the server to players
@@ -46,6 +52,44 @@ func NewTurn() Turn {
 type ChatMessage struct {
 	From    string
 	Message string
+}
+
+func NewGame() *GameState {
+	od := make(map[ObjectiveType][]Objective)
+	ir := make(map[ImprovementType]int)
+	pd := make([]DeckPlot, 0)
+	err1 := json.Unmarshal(InitialObjectiveDeck, &od)
+	err2 := json.Unmarshal(InitialImprovements, &ir)
+	err3 := json.Unmarshal(InitialPlotDeck, &pd)
+	err := errors.Join(err1, err2, err3)
+	if err != nil {
+		panic(err)
+	}
+	// shuffle plots and objectives, 3 times each to get them mixed up good
+	for x := 0; x < 3; x++ {
+		rand.Shuffle(len(pd), func(i, j int) {
+			pd[i], pd[j] = pd[j], pd[i]
+		})
+		rand.Shuffle(len(od[PlotObjectiveType]), func(i, j int) {
+			od[PlotObjectiveType][i], od[PlotObjectiveType][j] = od[PlotObjectiveType][j], od[PlotObjectiveType][i]
+		})
+		rand.Shuffle(len(od[PandaObjectiveType]), func(i, j int) {
+			od[PandaObjectiveType][i], od[PandaObjectiveType][j] = od[PandaObjectiveType][j], od[PandaObjectiveType][i]
+		})
+		rand.Shuffle(len(od[GardenerObjectiveType]), func(i, j int) {
+			od[GardenerObjectiveType][i], od[GardenerObjectiveType][j] = od[GardenerObjectiveType][j], od[GardenerObjectiveType][i]
+		})
+	}
+	g := &GameState{
+		Board:                 NewBoard(),
+		IrrigationReserve:     20,
+		ObjectiveDecks:        od,
+		AvailableImprovements: ir,
+		PlotDeck:              pd,
+		GameLog:               make([]string, 0),
+		ChatLog:               make([]ChatMessage, 0),
+	}
+	return g
 }
 
 func (g *GameState) DrawPlots() []DeckPlot {

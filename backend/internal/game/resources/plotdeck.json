@@ -1,0 +1,110 @@
+[
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "ENCLOSURE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "ENCLOSURE"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "WATERSHED"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "WATERSHED"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "FERTILIZER"
+    },
+    {
+        "Type": "GREEN_BAMBOO",
+        "Improvement": "FERTILIZER"
+    },
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },    
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },   
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },    
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },    
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "ENCLOSURE"
+    },
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "WATERSHED"
+    },
+    {
+        "Type": "YELLOW_BAMBOO",
+        "Improvement": "FERTILIZER"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "NONE"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "ENCLOSURE"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "WATERSHED"
+    },
+    {
+        "Type": "PINK_BAMBOO",
+        "Improvement": "FERTILIZER"
+    }
+]

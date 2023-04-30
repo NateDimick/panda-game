@@ -1,0 +1,518 @@
+{
+    "PANDA": [
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 3,
+                "GreenCount": 2,
+                "YellowCount": 0,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 3,
+                "GreenCount": 2,
+                "YellowCount": 0,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 3,
+                "GreenCount": 2,
+                "YellowCount": 0,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 3,
+                "GreenCount": 2,
+                "YellowCount": 0,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 3,
+                "GreenCount": 2,
+                "YellowCount": 0,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 4,
+                "GreenCount": 0,
+                "YellowCount": 2,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 4,
+                "GreenCount": 0,
+                "YellowCount": 2,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 4,
+                "GreenCount": 0,
+                "YellowCount": 2,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 4,
+                "GreenCount": 0,
+                "YellowCount": 2,
+                "PinkCount": 0
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 5,
+                "GreenCount": 0,
+                "YellowCount": 0,
+                "PinkCount": 2
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 5,
+                "GreenCount": 0,
+                "YellowCount": 0,
+                "PinkCount": 2
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 5,
+                "GreenCount": 0,
+                "YellowCount": 0,
+                "PinkCount": 2
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 6,
+                "GreenCount": 1,
+                "YellowCount": 1,
+                "PinkCount": 1
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 6,
+                "GreenCount": 1,
+                "YellowCount": 1,
+                "PinkCount": 1
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PANDA",
+                "Value": 6,
+                "GreenCount": 1,
+                "YellowCount": 1,
+                "PinkCount": 1
+            }
+        }
+    ],
+    "PLOT": [
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 2,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "GREEN_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 2,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 2,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 3,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "GREEN_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 3,
+                "AnchorColor": "YELLOW_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 3,
+                "AnchorColor": "YELLOW_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 3,
+                "AnchorColor": "YELLOW_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 4,
+                "AnchorColor": "YELLOW_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 4,
+                "AnchorColor": "PINK_BAMBOO",
+                "Neighbors": [
+                    "PINK_BAMBOO",
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 4,
+                "AnchorColor": "PINK_BAMBOO",
+                "Neighbors": [
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 4,
+                "AnchorColor": "PINK_BAMBOO",
+                "Neighbors": [
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 5,
+                "AnchorColor": "PINK_BAMBOO",
+                "Neighbors": [
+                    "PINK_BAMBOO",
+                    "PINK_BAMBOO",
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 3,
+                "AnchorColor": "YELLOW_BAMBOO",
+                "Neighbors": [
+                    "GREEN_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 4,
+                "AnchorColor": "GREEN_BAMBOO",
+                "Neighbors": [
+                    "PINK_BAMBOO",
+                    "GREEN_BAMBOO",
+                    "PINK_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "PLOT",
+                "Value": 5,
+                "AnchorColor": "PINK_BAMBOO",
+                "Neighbors": [
+                    "YELLOW_BAMBOO",
+                    "PINK_BAMBOO",
+                    "YELLOW_BAMBOO",
+                    "ANY",
+                    "ANY",
+                    "ANY"
+                ]
+            }
+        }
+    ],
+    "GARDENER": [
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "GREEN_BAMBOO",
+                "Value": 3,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "FERTILIZER"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "GREEN_BAMBOO",
+                "Value": 4,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "ENCLOSURE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "GREEN_BAMBOO",
+                "Value": 4,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "WATERSHED"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "GREEN_BAMBOO",
+                "Value": 5,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "NONE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "GREEN_BAMBOO",
+                "Value": 8,
+                "Height": 4,
+                "Count": 4,
+                "Improvement": "ANY"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "YELLOW_BAMBOO",
+                "Value": 4,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "FERTILIZER"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "YELLOW_BAMBOO",
+                "Value": 5,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "ENCLOSURE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "YELLOW_BAMBOO",
+                "Value": 5,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "WATERSHED"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "YELLOW_BAMBOO",
+                "Value": 6,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "NONE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "YELLOW_BAMBOO",
+                "Value": 7,
+                "Height": 3,
+                "Count": 3,
+                "Improvement": "ANY"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "PINK_BAMBOO",
+                "Value": 5,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "FERTILIZER"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "PINK_BAMBOO",
+                "Value": 6,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "ENCLOSURE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "PINK_BAMBOO",
+                "Value": 6,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "WATERSHED"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "PINK_BAMBOO",
+                "Value": 7,
+                "Height": 4,
+                "Count": 1,
+                "Improvement": "NONE"
+            }
+        },
+        {
+            "ObjectiveChecker": {
+                "OT": "GARDENER",
+                "Color": "PINK_BAMBOO",
+                "Value": 6,
+                "Height": 3,
+                "Count": 2,
+                "Improvement": "ANY"
+            }
+        }
+    ]
+}

@@ -73,10 +73,15 @@ type Objective struct {
 
 func (o *Objective) UnmarshalJSON(b []byte) error {
 	m := make(map[string]interface{})
-	json.Unmarshal(b, &m)
+	if err := json.Unmarshal(b, &m); err != nil {
+		return err
+	}
 	ob := m["ObjectiveChecker"].(map[string]interface{})
 
-	bs, _ := json.Marshal(ob)
+	bs, err := json.Marshal(ob)
+	if err != nil {
+		return err
+	}
 
 	switch ObjectiveType(ob["OT"].(string)) {
 	case PandaObjectiveType:

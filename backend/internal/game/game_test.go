@@ -6,6 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewGame(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Fail()
+		}
+	}()
+	g := NewGame()
+	assert.NotNil(t, g)
+	assert.Equal(t, 15, len(g.ObjectiveDecks[PlotObjectiveType]))
+	assert.Equal(t, 15, len(g.ObjectiveDecks[GardenerObjectiveType]))
+	assert.Equal(t, 15, len(g.ObjectiveDecks[PandaObjectiveType]))
+}
+
 func TestDrawPlots(t *testing.T) {
 	g := new(GameState)
 	g.PlotDeck = []DeckPlot{
