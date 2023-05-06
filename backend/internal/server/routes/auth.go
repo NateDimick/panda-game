@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
-	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
+	"go.uber.org/zap"
 )
 
 type AuthAPI struct {
@@ -20,8 +21,10 @@ func NewAuthAPI(m mongoconn.CollectionConn) *AuthAPI {
 
 func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 	uname, pass, ok := r.BasicAuth()
+	zap.L().Info("user logging in", zap.String("uname", uname), zap.String("pass", pass))
 	if !ok {
 		// handle bad basic auth parse
+		zap.L().Warn("invalid basic auth provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -29,35 +32,49 @@ func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 	// get record from db by username
 	record, err := mongoconn.GetUser(uname, a.mongo)
 	if err != nil {
+		zap.L().Error("error finding user record to login", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// check password vs db record
-	id2 := make([]byte, 0)
-	_, err = hex.NewDecoder(strings.NewReader(record.SecondaryIdentity)).Read(id2)
+	id2, err := hex.DecodeString(record.SecondaryIdentity)
 	if err != nil {
+		zap.L().Error("error decoding password from db", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !auth.Verify([]byte(pass), id2, record.PrimaryIdentity) {
 		// handle bad login
+		zap.L().Warn("password does not match")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// if checks out, set cookie containing username and playerID
-	w.WriteHeader(http.StatusOK)
 	c1 := &http.Cookie{
-		Name:  "PlayerId",
-		Value: record.TertiaryIdentity,
+		Name:     "PlayerId",
+		Value:    record.TertiaryIdentity,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Hour * 8760),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteDefaultMode,
+		MaxAge:   0,
 	}
 	c2 := &http.Cookie{
-		Name:  "UserName",
-		Value: record.Name,
+		Name:     "UserName",
+		Value:    record.Name,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Hour * 8760),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteDefaultMode,
+		MaxAge:   0,
 	}
 	http.SetCookie(w, c1)
 	http.SetCookie(w, c2)
+	// if checks out, set cookie containing username and playerID
+	w.WriteHeader(http.StatusOK)
 }
 
 func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -71,10 +88,12 @@ func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	// check if username is available
 	exists, err := mongoconn.GetUser(uname, a.mongo)
 	if err != nil {
+		zap.L().Error("check user exists error", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if exists != nil {
+		zap.L().Warn("username taken")
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -91,6 +110,7 @@ func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	err = mongoconn.StoreUser(record, a.mongo)
 	if err != nil {
+		zap.L().Error("store new user error", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

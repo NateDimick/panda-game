@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
@@ -14,6 +15,7 @@ import (
 )
 
 const NS string = "/"
+const GNS string = "/game"
 
 type ServerEventType string
 
@@ -56,9 +58,13 @@ type ConnectionContext struct {
 }
 
 func (gs *GameServer) OnConnect(s socketio.Conn) error {
+	defer deferRecover(s)
 	// a new user connects
+	fmt.Println("WHAT THE FUCK IS HAPPENING ON CONNECT?!?!?!?!?!?!? ", s.ID())
+	zap.L().Info("Player connection happening", zap.String("sid", s.ID()))
 	headers := s.RemoteHeader()
 	cookie := headers.Get("Cookie")
+	zap.L().Info("Found connection cookie", zap.String("cookie", cookie))
 	kvPairs := strings.Split(cookie, ";")
 	cookieMap := make(map[string]string)
 	for _, mapping := range kvPairs {
@@ -76,28 +82,35 @@ func (gs *GameServer) OnConnect(s socketio.Conn) error {
 }
 
 func (gs *GameServer) OnDisconnect(s socketio.Conn, reason string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(nil)
+	cc := getConnectionContext(s)
 	zap.L().Warn("Disconnection", zap.String("playerId", cc.PlayerID))
 }
 
 func (gs *GameServer) OnError(s socketio.Conn, e error) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	zap.L().Error("Error in connection, leaving all rooms and closing", zap.Error(e), zap.String("playerId", cc.PlayerID))
-	s.LeaveAll()
-	s.Emit(string(Goodbye))
-	s.Close()
+	if s != nil {
+		s.LeaveAll()
+		s.Emit(string(Goodbye))
+		s.Close()
+	}
 }
 
 func (gs *GameServer) OnSearchForGame(s socketio.Conn, msg string) {
+	defer deferRecover(s)
 	// matchmaking is a way future feature
 }
 
 func (gs *GameServer) OnCancelSearchForGame(s socketio.Conn, msg string) {
+	defer deferRecover(s)
 	// matchmaking is a way future feature
 }
 
 func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	// generate room name
 	unique := false
 	var gid string
@@ -122,21 +135,24 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 }
 
 func (gs *GameServer) OnJoinGame(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	zap.L().Info("Player joining game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
 	s.Join(msg)
-	gs.Server.BroadcastToRoom(NS, msg, string(LobbyUpdate), "todo event payload")
+	gs.Server.BroadcastToRoom(GNS, msg, string(LobbyUpdate), "todo event payload")
 }
 
 func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	zap.L().Info("Player leaving game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
 	s.Leave(msg)
-	gs.Server.BroadcastToRoom(NS, msg, string(LobbyUpdate), "todo event payload")
+	gs.Server.BroadcastToRoom(GNS, msg, string(LobbyUpdate), "todo event payload")
 }
 
 func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	zap.L().Info("Player Chat Message", zap.String("playerId", cc.PlayerID), zap.String("chat", msg))
 	// unmarshal chat struct from json
 	cm, err := util.FromJSONString[game.ChatMessage](msg)
@@ -154,7 +170,8 @@ func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
 }
 
 func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	// check if user is empowered to start games
 	l := getLobbyState(msg, gs.Redis)
 
@@ -196,7 +213,7 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 	broadcastRoomGameStart(msg, g, gs.Server)
 
 	// send prompt to player
-	gs.Server.ForEach(NS, msg, func(c socketio.Conn) {
+	gs.Server.ForEach(GNS, msg, func(c socketio.Conn) {
 		cc := c.Context().(ConnectionContext)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, s)
@@ -205,7 +222,8 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 }
 
 func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
-	cc := s.Context().(ConnectionContext)
+	defer deferRecover(s)
+	cc := getConnectionContext(s)
 	zap.L().Info("Player is taking action", zap.String("playerId", cc.PlayerID), zap.String("action", msg))
 	// convert msg to PromptResponse
 	pr, err := util.FromJSONString[game.PromptResponse](msg)
@@ -233,7 +251,7 @@ func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
 		return
 	}
 	// else, the prompt is for the next player, then do something like this:
-	gs.Server.ForEach(NS, pr.Gid, func(c socketio.Conn) {
+	gs.Server.ForEach(GNS, pr.Gid, func(c socketio.Conn) {
 		cc := c.Context().(ConnectionContext)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, c)
