@@ -77,6 +77,7 @@ type PromptResponse struct {
 	Action    PromptType
 	Selection interface{}
 	Pid       string
+	Gid       string
 }
 
 // given the type of prompt, perform some type conversion so the returned value can be directly asserted to the desired type

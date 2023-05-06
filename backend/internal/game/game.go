@@ -60,6 +60,7 @@ type Turn struct {
 type ChatMessage struct {
 	From    string
 	Message string
+	Gid     string
 }
 
 func NewGame() *GameState {

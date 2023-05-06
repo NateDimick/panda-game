@@ -1,11 +1,15 @@
 package events
 
 import (
+	"context"
+	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
+	"pandagame/internal/util"
 	"strings"
 
 	socketio "github.com/googollee/go-socket.io"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -33,6 +37,11 @@ const (
 	CreateGame     ClientEventType = "CreateGame"
 	StartGame      ClientEventType = "StartGame"
 	ChangeSettings ClientEventType = "ChangeSettings"
+)
+
+const (
+	gameSfx  string = "-g"
+	lobbySfx string = "-l"
 )
 
 type GameServer struct {
@@ -88,10 +97,28 @@ func (gs *GameServer) OnCancelSearchForGame(s socketio.Conn, msg string) {
 }
 
 func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
-	//
+	cc := s.Context().(ConnectionContext)
 	// generate room name
+	unique := false
+	var gid string
+	for !unique {
+		gid = NewGameID()
+		if err := gs.Redis.Get(context.Background(), gid+lobbySfx).Err(); err == redis.Nil {
+			unique = true
+		}
+	}
 	// join that room
+	s.Join(gid)
+
+	l := &Lobby{
+		Host:    cc,
+		Players: []ConnectionContext{cc},
+	}
+
+	storeLobbyState(gid, l, gs.Redis)
+
 	// emit lobby update to the room
+	broadcastRoomLobbyUpdate(gid, l.RemoveIDs(), gs.Server)
 }
 
 func (gs *GameServer) OnJoinGame(s socketio.Conn, msg string) {
@@ -112,28 +139,107 @@ func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
 	cc := s.Context().(ConnectionContext)
 	zap.L().Info("Player Chat Message", zap.String("playerId", cc.PlayerID), zap.String("chat", msg))
 	// unmarshal chat struct from json
+	cm, err := util.FromJSONString[game.ChatMessage](msg)
+	if err != nil {
+
+	}
 	// get game state from redis
+	g := getGameState(cm.Gid, gs.Redis)
 	// add chat message
+	g.ChatLog = append(g.ChatLog, *cm)
 	// store game state
+	storeGameState(cm.Gid, g, gs.Redis)
 	// emit game state to room
+	broadcastRoomGameUpdate(cm.Gid, g, gs.Server)
 }
 
 func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
-	//cc := s.Context().(ConnectionContext)
+	cc := s.Context().(ConnectionContext)
 	// check if user is empowered to start games
+	l := getLobbyState(msg, gs.Redis)
+
+	if cc.PlayerID != l.Host.PlayerID {
+		s.Emit(string(Warning), "You're not the Host")
+		return
+	}
+
+	if len(l.Players) < 2 {
+		s.Emit(string(Warning), "Not enough Players")
+		return
+	}
+
+	g := game.NewGame()
+	players := make([]*game.Player, 0)
+	for i, p := range l.Players {
+		player := &game.Player{
+			Name:               p.UserName,
+			ID:                 p.PlayerID,
+			Order:              i,
+			Bamboo:             make(game.BambooReserve),
+			Improvements:       make(game.ImprovementReserve),
+			Objectives:         make([]game.Objective, 0),
+			CompleteObjectives: make([]game.Objective, 0),
+		}
+		players = append(players, player)
+	}
+	g.AddPlayers(players)
+	g.NextTurn()
+	prompt := g.NextChooseActionPrompt()
+	g.CurrentTurn.CurrentPrompt = prompt
+
+	storeGameState(msg, g, gs.Redis)
+
+	l.Started = true
+
+	storeLobbyState(msg, l, gs.Redis)
+
+	broadcastRoomGameStart(msg, g, gs.Server)
+
+	// send prompt to player
+	gs.Server.ForEach(NS, msg, func(c socketio.Conn) {
+		cc := c.Context().(ConnectionContext)
+		if cc.PlayerID == g.CurrentTurn.PlayerID {
+			emitMessage("ActionPrompt", &prompt, s)
+		}
+	})
 }
 
 func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
 	cc := s.Context().(ConnectionContext)
 	zap.L().Info("Player is taking action", zap.String("playerId", cc.PlayerID), zap.String("action", msg))
-	// get game state from cache
 	// convert msg to PromptResponse
+	pr, err := util.FromJSONString[game.PromptResponse](msg)
+	if err != nil {
+		handleError(err, s)
+		return
+	}
+	// get game state from cache
+	g := getGameState(pr.Gid, gs.Redis)
+
+	if cc.PlayerID != g.CurrentTurn.PlayerID {
+		s.Emit(string(Warning), "It's not your turn")
+		return
+	}
+
 	// do game thing
-	// if the prompt is for the next player, then do something like this:
-	gs.Server.ForEach(NS, "todo room id", func(c socketio.Conn) {
+	prompt := game.GameFlow(g, *pr)
+
+	// store game state
+	storeGameState(pr.Gid, g, gs.Redis)
+
+	if g.CurrentTurn.PlayerID == cc.PlayerID {
+		// send prompt to current player
+		emitMessage("ActionPrompt", &prompt, s)
+		return
+	}
+	// else, the prompt is for the next player, then do something like this:
+	gs.Server.ForEach(NS, pr.Gid, func(c socketio.Conn) {
 		cc := c.Context().(ConnectionContext)
-		if cc.PlayerID == "todo - next player id" {
-			c.Emit("ActionPrompt", "todo - the prompt the game engine produced, json marshalled")
+		if cc.PlayerID == g.CurrentTurn.PlayerID {
+			emitMessage("ActionPrompt", &prompt, c)
 		}
 	})
+
+	// broadcast gamestate to room
+	broadcastRoomGameUpdate(pr.Gid, g, gs.Server)
 }
