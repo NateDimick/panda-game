@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  game-server:
+    image: panda-game-server
+    ports:
+      - 3000:3000
+    environment:
+      - MONGO_URI=mongodb://panda:game@mongo:27017
+      - MONGO_DB=panda_game
+      - MONGO_COLL=panda_users
+  redis:
+    image: redis
+    ports: 
+      - 6379:6379
+  mongo:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=panda
+      - MONGO_INITDB_ROOT_PASSWORD=game
+    ports:
+      - 27017:27017

@@ -1,0 +1,4 @@
+.build/
+.task/
+script-venv
+*.log

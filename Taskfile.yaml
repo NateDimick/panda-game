@@ -1,0 +1,58 @@
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task -l
+  build-dir:
+    internal: true
+    dir: backend
+    cmds: 
+      - mkdir .build
+    status:
+      - test -d .build
+  build:
+    desc: compile the backend server application
+    deps: [build-dir]
+    dir: backend
+    cmds:
+      - go build -o .build/panda-game-server cmd/panda-game/main.go
+    sources:
+      - ./**/*.go
+    generates:
+      - .build/panda-game-server
+  unit-test:
+    desc: run unit tests
+    aliases: [ut, test]
+    deps: [build-dir]
+    dir: backend
+    cmds:
+      - go test ./... -v -coverprofile .build/cover.out
+    sources: 
+      - ./**/*.go
+    generates:
+      - .build/cover.out
+  test-coverage:
+    desc: display unit test coverage profile
+    aliases: [utc, coverage]
+    deps: [unit-test]
+    dir: backend
+    cmds:
+      - go tool cover -html .build/cover.out
+  server-docker:
+    desc: build docker image for game server
+    cmds:
+      - docker build -f docker/server.dockerfile -t panda-game-server:latest .
+    sources:
+      - backend/*
+      - docker/server.dockerfile
+  run:
+    desc: run the panda game locally
+    dir: local
+    cmd:
+      - docker-compose up --detach
+  stop:
+    desc: stop the panda game locally
+    dir: local
+    cmd:
+      - docker-compose down
