@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"log/slog"
 	"pandagame/internal/auth"
 	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
@@ -12,7 +13,6 @@ import (
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
 const NS string = "/" // namespace - there is only one namespace in this application
@@ -56,10 +56,10 @@ type GameServer struct {
 func (gs *GameServer) OnConnect(s socketio.Conn) error {
 	defer deferRecover(s)
 	// a new user connects
-	zap.L().Info("Player connection happening", zap.String("sid", s.ID()))
+	slog.Info("Player connection happening", slog.String("sid", s.ID()))
 	headers := s.RemoteHeader()
 	cookie := headers.Get("Cookie")
-	zap.L().Info("Found connection cookie", zap.String("cookie", cookie))
+	slog.Info("Found connection cookie", slog.String("cookie", cookie))
 	kvPairs := strings.Split(cookie, ";")
 	cookieMap := make(map[string]string)
 	for _, mapping := range kvPairs {
@@ -74,7 +74,7 @@ func (gs *GameServer) OnConnect(s socketio.Conn) error {
 		return err
 	}
 	s.SetContext(us)
-	zap.L().Info("New Player connected", zap.String("userName", us.Name), zap.String("playerId", us.PlayerID), zap.String("cookie", cookie))
+	slog.Info("New Player connected", slog.String("userName", us.Name), slog.String("playerId", us.PlayerID), slog.String("cookie", cookie))
 	// TODO - re-join rooms if coming back from disconnect
 	return nil
 }
@@ -82,7 +82,7 @@ func (gs *GameServer) OnConnect(s socketio.Conn) error {
 func (gs *GameServer) OnDisconnect(s socketio.Conn, reason string) {
 	defer deferRecover(nil)
 	cc := getConnectionContext(s)
-	zap.L().Warn("Disconnection", zap.String("playerId", cc.PlayerID))
+	slog.Warn("Disconnection", slog.String("playerId", cc.PlayerID))
 	for _, gid := range s.Rooms() {
 		l := getLobbyState(gid, gs.Redis)
 		if l.Host.PlayerID == cc.PlayerID {
@@ -94,7 +94,7 @@ func (gs *GameServer) OnDisconnect(s socketio.Conn, reason string) {
 func (gs *GameServer) OnError(s socketio.Conn, e error) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
-	zap.L().Error("Error in connection, leaving all rooms and closing", zap.Error(e), zap.String("playerId", cc.PlayerID))
+	slog.Error("Error in connection, leaving all rooms and closing", slog.String("error", e.Error()), slog.String("playerId", cc.PlayerID))
 	if s != nil {
 		s.LeaveAll()
 		s.Emit(string(Goodbye))
@@ -147,7 +147,7 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 func (gs *GameServer) OnJoinGame(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
-	zap.L().Info("Player joining game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
+	slog.Info("Player joining game room", slog.String("playerId", cc.PlayerID), slog.String("room", msg))
 	s.Join(msg)
 	l := getLobbyState(msg, gs.Redis)
 	if len(l.Players) < 4 && !l.Started {
@@ -164,7 +164,7 @@ func (gs *GameServer) OnJoinGame(s socketio.Conn, msg string) {
 func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
-	zap.L().Info("Player leaving game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
+	slog.Info("Player leaving game room", slog.String("playerId", cc.PlayerID), slog.String("room", msg))
 	s.Leave(msg)
 
 	l := getLobbyState(msg, gs.Redis)
@@ -198,7 +198,7 @@ func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
 func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
-	zap.L().Info("Player Chat Message", zap.String("playerId", cc.PlayerID), zap.String("chat", msg))
+	slog.Info("Player Chat Message", slog.String("playerId", cc.PlayerID), slog.String("chat", msg))
 	// unmarshal chat struct from json
 	cm, err := util.FromJSONString[game.ChatMessage](msg)
 	if err != nil {
@@ -269,7 +269,7 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
-	zap.L().Info("Player is taking action", zap.String("playerId", cc.PlayerID), zap.String("action", msg))
+	slog.Info("Player is taking action", slog.String("playerId", cc.PlayerID), slog.String("action", msg))
 	// convert msg to PromptResponse
 	pr, err := util.FromJSONString[game.PromptResponse](msg)
 	if err != nil {

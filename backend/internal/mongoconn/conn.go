@@ -3,6 +3,7 @@ package mongoconn
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"pandagame/internal/auth"
 
@@ -10,13 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.uber.org/zap"
 )
 
 func NewMongoConn() CollectionConn {
 	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
-		zap.L().Error("")
+		slog.Error("")
 		panic(err)
 	}
 	client.Connect(context.TODO())
@@ -28,16 +28,16 @@ func GetUser(uname string, conn CollectionConn) (*auth.UserRecord, error) {
 	result := conn.FindOne(context.TODO(), bson.M{"name": uname})
 	if err := result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
-			zap.L().Info("no user with name " + uname)
+			slog.Info("no user with name " + uname)
 			return nil, nil
 		} else {
-			zap.L().Error("mongo err finding user", zap.Error(err))
+			slog.Error("mongo err finding user", slog.String("error", err.Error()))
 			return nil, err
 		}
 	}
 	user := new(auth.UserRecord)
 	result.Decode(user)
-	zap.L().Info(fmt.Sprintf("found user: %+v", user))
+	slog.Info(fmt.Sprintf("found user: %+v", user))
 	return user, nil
 }
 
@@ -46,6 +46,6 @@ func StoreUser(user *auth.UserRecord, conn CollectionConn) error {
 	if err != nil {
 		return err
 	}
-	zap.L().Info("User Stored", zap.String("username", user.Name), zap.String("id", result.InsertedID.(primitive.ObjectID).String()))
+	slog.Info("User Stored", slog.String("username", user.Name), slog.String("id", result.InsertedID.(primitive.ObjectID).String()))
 	return nil
 }

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
 const sessionPfx string = "s-" // session redis key prefix
@@ -26,10 +26,10 @@ func NewAuthAPI(m mongoconn.CollectionConn, r redisconn.RedisConn) *AuthAPI {
 
 func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 	uname, pass, ok := r.BasicAuth()
-	zap.L().Info("user logging in", zap.String("uname", uname), zap.String("pass", pass))
+	slog.Info("user logging in", slog.String("uname", uname), slog.String("pass", pass))
 	if !ok {
 		// handle bad basic auth parse
-		zap.L().Warn("invalid basic auth provided")
+		slog.Warn("invalid basic auth provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -37,7 +37,7 @@ func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 	// get record from db by username
 	record, err := mongoconn.GetUser(uname, a.mongo)
 	if err != nil {
-		zap.L().Error("error finding user record to login", zap.Error(err))
+		slog.Error("error finding user record to login", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -45,13 +45,13 @@ func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 	// check password vs db record
 	id2, err := hex.DecodeString(record.SecondaryIdentity)
 	if err != nil {
-		zap.L().Error("error decoding password from db", zap.Error(err))
+		slog.Error("error decoding password from db", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !auth.Verify([]byte(pass), id2, record.PrimaryIdentity) {
 		// handle bad login
-		zap.L().Warn("password does not match")
+		slog.Warn("password does not match")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -72,12 +72,12 @@ func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	// check if username is available
 	exists, err := mongoconn.GetUser(uname, a.mongo)
 	if err != nil {
-		zap.L().Error("check user exists error", zap.Error(err))
+		slog.Error("check user exists error", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if exists != nil {
-		zap.L().Warn("username taken")
+		slog.Warn("username taken")
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -94,7 +94,7 @@ func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	err = mongoconn.StoreUser(record, a.mongo)
 	if err != nil {
-		zap.L().Error("store new user error", zap.Error(err))
+		slog.Error("store new user error", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -135,7 +135,7 @@ func (a *AuthAPI) EmpowerUser(w http.ResponseWriter, r *http.Request) {
 	userToEmpower := r.URL.Query().Get("username")
 	user, err := mongoconn.GetUser(userToEmpower, a.mongo)
 	if err != nil {
-		zap.L().Error("error finding user record to empower", zap.Error(err))
+		slog.Error("error finding user record to empower", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -151,10 +151,10 @@ func (a *AuthAPI) EmpowerUser(w http.ResponseWriter, r *http.Request) {
 
 func (a *AuthAPI) LoginAsGuest(w http.ResponseWriter, r *http.Request) {
 	uname, pass, ok := r.BasicAuth()
-	zap.L().Info("guest user logging in", zap.String("uname", uname), zap.String("pass", pass))
+	slog.Info("guest user logging in", slog.String("uname", uname), slog.String("pass", pass))
 	if !ok {
 		// handle bad basic auth parse
-		zap.L().Warn("invalid basic auth provided")
+		slog.Warn("invalid basic auth provided")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -162,7 +162,7 @@ func (a *AuthAPI) LoginAsGuest(w http.ResponseWriter, r *http.Request) {
 	// ensure guest is not taking someone else's name
 	record, err := mongoconn.GetUser(uname, a.mongo)
 	if err != nil {
-		zap.L().Error("error finding user record to login", zap.Error(err))
+		slog.Error("error finding user record to login", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -1,22 +1,22 @@
 package main
 
 import (
+	"log/slog"
 	"net/http"
+	"os"
 	"pandagame/internal/config"
 	"pandagame/internal/server"
-
-	"go.uber.org/zap"
 )
 
 func main() {
-	logger, _ := config.LoggerConfig().Build()
-	zap.ReplaceGlobals(logger)
+	config.SetLogger()
 	s := server.NewServer()
 	go func() {
 		if err := s.Socket.Serve(); err != nil {
-			zap.L().Fatal("Socketio server error, exiting", zap.Error(err))
+			slog.Error("Socketio server error, exiting", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
-	zap.L().Info("panda game server is running")
+	slog.Info("panda game server is running")
 	http.ListenAndServe(":3000", s.Router)
 }

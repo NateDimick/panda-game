@@ -2,13 +2,13 @@ package events
 
 import (
 	"fmt"
+	"log/slog"
 	"pandagame/internal/auth"
 	"pandagame/internal/game"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
 
 	socketio "github.com/googollee/go-socket.io"
-	"go.uber.org/zap"
 )
 
 // TODO this file needs error handling and logging
@@ -79,7 +79,7 @@ func handleError(err error, conn socketio.Conn) {
 
 func deferRecover(conn socketio.Conn) {
 	if err := recover(); err != nil {
-		zap.L().Error(fmt.Sprintf("event handler panic: %+v", err))
+		slog.Error(fmt.Sprintf("event handler panic: %+v", err))
 		if conn != nil {
 			handleError(fmt.Errorf("%+v", err), conn)
 		}
