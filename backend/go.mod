@@ -1,6 +1,6 @@
 module pandagame
 
-go 1.20
+go 1.21
 
 require (
 	github.com/go-chi/chi v1.5.4
@@ -10,7 +10,6 @@ require (
 	github.com/stretchr/testify v1.8.0
 	go.mongodb.org/mongo-driver v1.11.4
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 )
 
 require (
@@ -19,6 +18,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/gomodule/redigo v1.8.4 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 type Board struct {

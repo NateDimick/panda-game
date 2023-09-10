@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/gomodule/redigo/redis"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -117,7 +117,7 @@ func (a *AuthAPI) EmpowerUser(w http.ResponseWriter, r *http.Request) {
 
 	// get session info
 	session, err := redisconn.GetThing[auth.UserSession](sessionID+sessionSfx, a.redis)
-	if err == redis.ErrNil {
+	if err == redis.Nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Session expired, please log back in"))
 		return

@@ -7,12 +7,12 @@ import (
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
+	"slices"
 	"strings"
 
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 )
 
 const NS string = "/" // namespace - there is only one namespace in this application

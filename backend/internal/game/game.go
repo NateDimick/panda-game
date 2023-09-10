@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
-
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 type WeatherType string
