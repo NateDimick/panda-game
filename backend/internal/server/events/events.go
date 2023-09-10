@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"pandagame/internal/auth"
 	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
@@ -52,11 +53,6 @@ type GameServer struct {
 	Mongo mongoconn.CollectionConn
 }
 
-type ConnectionContext struct {
-	PlayerID string
-	UserName string
-}
-
 func (gs *GameServer) OnConnect(s socketio.Conn) error {
 	defer deferRecover(s)
 	// a new user connects
@@ -71,12 +67,14 @@ func (gs *GameServer) OnConnect(s socketio.Conn) error {
 			cookieMap[k] = v
 		}
 	}
-	cc := ConnectionContext{
-		UserName: cookieMap["UserName"],
-		PlayerID: cookieMap["PlayerId"],
+
+	us, err := redisconn.GetThing[auth.UserSession](cookieMap["pandaGameSession"]+"-session", gs.Redis)
+	if err != nil {
+		s.Emit(string(Warning), "please log in to connect")
+		return err
 	}
-	s.SetContext(cc)
-	zap.L().Info("New Player connected", zap.String("userName", cc.UserName), zap.String("playerId", cc.PlayerID), zap.String("cookie", cookie))
+	s.SetContext(us)
+	zap.L().Info("New Player connected", zap.String("userName", us.Name), zap.String("playerId", us.PlayerID), zap.String("cookie", cookie))
 	// TODO - re-join rooms if coming back from disconnect
 	return nil
 }
@@ -118,12 +116,7 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
 	// check if user is allowed to create lobbies
-	user, err := mongoconn.GetUser(cc.UserName, gs.Mongo)
-	if err != nil {
-		handleError(err, s)
-		return
-	}
-	if !user.Empowered {
+	if !cc.Empowered {
 		s.Emit(string(Warning), "You are not allowed to create lobbies")
 		return
 	}
@@ -141,8 +134,8 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 
 	l := &Lobby{
 		Host:       cc,
-		Players:    []ConnectionContext{cc},
-		Spectators: make([]ConnectionContext, 0),
+		Players:    []auth.UserSession{cc},
+		Spectators: make([]auth.UserSession, 0),
 	}
 
 	storeLobbyState(gid, l, gs.Redis)
@@ -185,7 +178,7 @@ func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
 		}
 	}
 	// check if user is in player list, and remove (if game is not started, move up spectator to player slot)
-	i := slices.IndexFunc(l.Players, func(c ConnectionContext) bool { return c.PlayerID == cc.PlayerID })
+	i := slices.IndexFunc(l.Players, func(us auth.UserSession) bool { return us.PlayerID == cc.PlayerID })
 	if i >= 0 {
 		l.Players = slices.Delete(l.Players, i, i+1)
 		if len(l.Spectators) > 0 {
@@ -194,7 +187,7 @@ func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
 		}
 	}
 	// check if user is in spectator list, and remove
-	j := slices.IndexFunc(l.Spectators, func(c ConnectionContext) bool { return c.PlayerID == cc.PlayerID })
+	j := slices.IndexFunc(l.Spectators, func(us auth.UserSession) bool { return us.PlayerID == cc.PlayerID })
 	if i >= 0 {
 		l.Players = slices.Delete(l.Spectators, j, j+1)
 	}
@@ -241,7 +234,7 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 	players := make([]*game.Player, 0)
 	for i, p := range l.Players {
 		player := &game.Player{
-			Name:               p.UserName,
+			Name:               p.Name,
 			ID:                 p.PlayerID,
 			Order:              i,
 			Bamboo:             make(game.BambooReserve),
@@ -266,7 +259,7 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 
 	// send prompt to player
 	gs.Server.ForEach(NS, msg, func(c socketio.Conn) {
-		cc := c.Context().(ConnectionContext)
+		cc := c.Context().(auth.UserSession)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, s)
 		}
@@ -304,7 +297,7 @@ func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
 	}
 	// else, the prompt is for the next player, then do something like this:
 	gs.Server.ForEach(NS, pr.Gid, func(c socketio.Conn) {
-		cc := c.Context().(ConnectionContext)
+		cc := c.Context().(auth.UserSession)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, c)
 		}

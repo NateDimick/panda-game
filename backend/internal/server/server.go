@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"os"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/server/events"
@@ -34,7 +35,7 @@ func NewServer() *Server {
 	s := newSocketServer()
 	r.Handle("/socket/", s)
 	// auth api
-	a := routes.NewAuthAPI(mongoconn.NewMongoConn())
+	a := routes.NewAuthAPI(mongoconn.NewMongoConn(), redisconn.NewRedisConn())
 	r.Post("/register", a.RegisterUser)
 	r.Post("/login", a.LoginUser)
 	r.Post("/empower", a.EmpowerUser)
@@ -56,6 +57,12 @@ func newSocketServer() *socketio.Server {
 		PingTimeout:  time.Second,
 		PingInterval: time.Millisecond,
 	})
+	if _, err := s.Adapter(&socketio.RedisAdapterOptions{
+		Addr: os.Getenv("REDIS_ADDR"),
+		DB:   0,
+	}); err != nil {
+		panic("Could not set redis adapter for socket server " + err.Error())
+	}
 	gs := events.GameServer{Server: s, Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
 	// add callbacks
 	s.OnConnect(events.NS, gs.OnConnect)

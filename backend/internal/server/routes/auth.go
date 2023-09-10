@@ -5,18 +5,23 @@ import (
 	"net/http"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
+	"pandagame/internal/redisconn"
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/gomodule/redigo/redis"
 	"go.uber.org/zap"
 )
 
+const sessionSfx string = "-session"
+
 type AuthAPI struct {
 	mongo mongoconn.CollectionConn
+	redis redisconn.RedisConn
 }
 
-func NewAuthAPI(m mongoconn.CollectionConn) *AuthAPI {
-	return &AuthAPI{m}
+func NewAuthAPI(m mongoconn.CollectionConn, r redisconn.RedisConn) *AuthAPI {
+	return &AuthAPI{m, r}
 }
 
 func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +56,7 @@ func (a *AuthAPI) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	setCookies(w, *record)
+	setSession(w, *record, a.redis)
 	// if checks out, set cookie containing username and playerID
 	w.WriteHeader(http.StatusOK)
 }
@@ -101,38 +106,27 @@ func (a *AuthAPI) RegisterUser(w http.ResponseWriter, r *http.Request) {
 // allows an empowered user to empower other users
 // specify username to empower by query param
 func (a *AuthAPI) EmpowerUser(w http.ResponseWriter, r *http.Request) {
-	// get requester auth
-	uname, pass, ok := r.BasicAuth()
-	zap.L().Info("user empowering user", zap.String("uname", uname), zap.String("pass", pass))
-	if !ok {
-		// handle bad basic auth parse
-		zap.L().Warn("invalid basic auth provided")
-		w.WriteHeader(http.StatusBadRequest)
+	// get session cookie
+	sessionCookie, err := r.Cookie("pandaGameSession")
+	if err == http.ErrNoCookie {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Absent session, please log in"))
+		return
+	}
+	sessionID := sessionCookie.Value
+
+	// get session info
+	session, err := redisconn.GetThing[auth.UserSession](sessionID+sessionSfx, a.redis)
+	if err == redis.ErrNil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Session expired, please log back in"))
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// The fact that this is like login gives validity to JWTs for login - then just have to validate signature
-	// get record from db by username
-	record, err := mongoconn.GetUser(uname, a.mongo)
-	if err != nil {
-		zap.L().Error("error finding user record to login", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	id2, err := hex.DecodeString(record.SecondaryIdentity)
-	if err != nil {
-		zap.L().Error("error decoding password from db", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !auth.Verify([]byte(pass), id2, record.PrimaryIdentity) {
-		// handle bad login
-		zap.L().Warn("password does not match")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	// check if user is empowered
-	if !record.Empowered {
+	if !session.Empowered {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -179,7 +173,7 @@ func (a *AuthAPI) LoginAsGuest(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if record.Guest && record.SecondaryIdentity == pass {
 		// guest re-logged in before they expired - re-issue their id
-		setCookies(w, *record)
+		setSession(w, *record, a.redis)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -199,32 +193,27 @@ func (a *AuthAPI) LoginAsGuest(w http.ResponseWriter, r *http.Request) {
 	mongoconn.StoreUser(&tempUser, a.mongo)
 
 	// issue cookies
-	setCookies(w, tempUser)
+	setSession(w, tempUser, a.redis)
 	w.WriteHeader(http.StatusOK)
 	return
 }
 
-func setCookies(w http.ResponseWriter, record auth.UserRecord) {
-	c1 := &http.Cookie{
-		Name:     "PlayerId",
-		Value:    record.TertiaryIdentity,
-		Path:     "/",
-		Expires:  time.Now().Add(time.Hour * 8760),
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteDefaultMode,
-		MaxAge:   0,
+func setSession(w http.ResponseWriter, record auth.UserRecord, redis redisconn.RedisConn) {
+	userSession := auth.UserSession{
+		SessionID: uuid.Must(uuid.NewV4()).String(),
+		Name:      record.Name,
+		PlayerID:  record.TertiaryIdentity,
+		ExpireAt:  time.Now().Add(time.Hour * 24 * 7), // sessions can last 1 week
 	}
-	c2 := &http.Cookie{
-		Name:     "UserName",
-		Value:    record.Name,
-		Path:     "/",
-		Expires:  time.Now().Add(time.Hour * 8760),
-		Secure:   true,
+	// store session
+	redisconn.SetThing(userSession.SessionID+sessionSfx, &userSession, redis)
+	// write session id cookie
+	sessionCookie := http.Cookie{
+		Name:     "pandaGameSession",
+		Value:    userSession.SessionID,
+		Expires:  userSession.ExpireAt,
 		HttpOnly: true,
-		SameSite: http.SameSiteDefaultMode,
-		MaxAge:   0,
+		Secure:   true,
 	}
-	http.SetCookie(w, c1)
-	http.SetCookie(w, c2)
+	http.SetCookie(w, &sessionCookie)
 }

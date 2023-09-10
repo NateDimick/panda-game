@@ -2,6 +2,7 @@ package redisconn
 
 import (
 	"context"
+	"os"
 	"pandagame/internal/util"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 
 func NewRedisConn() RedisConn {
 	conn := redis.NewClient(&redis.Options{
-		Addr: "todo",
+		Addr: os.Getenv("REDIS_ADDR"),
 		DB:   0,
 	})
 

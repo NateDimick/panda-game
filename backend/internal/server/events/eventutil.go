@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"pandagame/internal/auth"
 	"pandagame/internal/game"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
@@ -12,20 +13,20 @@ import (
 
 // TODO this file needs error handling and logging
 
-func getConnectionContext(s socketio.Conn) ConnectionContext {
+func getConnectionContext(s socketio.Conn) auth.UserSession {
 	if s == nil {
-		return ConnectionContext{
+		return auth.UserSession{
 			PlayerID: "No Connection",
-			UserName: "No Connection",
+			Name:     "No Connection",
 		}
 	}
 	if s.Context() == nil {
-		return ConnectionContext{
+		return auth.UserSession{
 			PlayerID: fmt.Sprintf("No Context for %s", s.ID()),
-			UserName: fmt.Sprintf("No Context for %s", s.ID()),
+			Name:     fmt.Sprintf("No Context for %s", s.ID()),
 		}
 	}
-	cc := s.Context().(ConnectionContext)
+	cc := s.Context().(auth.UserSession)
 	return cc
 }
 

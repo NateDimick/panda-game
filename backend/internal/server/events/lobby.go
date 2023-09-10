@@ -1,9 +1,11 @@
 package events
 
+import "pandagame/internal/auth"
+
 type Lobby struct {
-	Host       ConnectionContext
-	Players    []ConnectionContext
-	Spectators []ConnectionContext
+	Host       auth.UserSession
+	Players    []auth.UserSession
+	Spectators []auth.UserSession
 	Started    bool
 }
 
@@ -16,16 +18,16 @@ type UILobby struct {
 
 func (l *Lobby) RemoveIDs() *UILobby {
 	u := new(UILobby)
-	u.Host = l.Host.UserName
+	u.Host = l.Host.Name
 	u.Started = l.Started
 	u.Players = make([]string, len(l.Players))
 
 	for i, p := range l.Players {
-		u.Players[i] = p.UserName
+		u.Players[i] = p.Name
 	}
 	u.Spectators = make([]string, len(l.Spectators))
 	for i, s := range l.Spectators {
-		u.Spectators[i] = s.UserName
+		u.Spectators[i] = s.Name
 	}
 
 	return u
