@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
@@ -12,10 +11,10 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
-const NS string = "/"
-const GNS string = "/game"
+const NS string = "/" // namespace - there is only one namespace in this application
 
 type ServerEventType string
 
@@ -36,6 +35,7 @@ const (
 	LeaveGame      ClientEventType = "LeaveGame"
 	GameChat       ClientEventType = "GameChat"
 	TakeAction     ClientEventType = "TakeAction"
+	Reprompt       ClientEventType = "RePrompt"
 	CreateGame     ClientEventType = "CreateGame"
 	StartGame      ClientEventType = "StartGame"
 	ChangeSettings ClientEventType = "ChangeSettings"
@@ -60,7 +60,6 @@ type ConnectionContext struct {
 func (gs *GameServer) OnConnect(s socketio.Conn) error {
 	defer deferRecover(s)
 	// a new user connects
-	fmt.Println("WHAT THE FUCK IS HAPPENING ON CONNECT?!?!?!?!?!?!? ", s.ID())
 	zap.L().Info("Player connection happening", zap.String("sid", s.ID()))
 	headers := s.RemoteHeader()
 	cookie := headers.Get("Cookie")
@@ -78,6 +77,7 @@ func (gs *GameServer) OnConnect(s socketio.Conn) error {
 	}
 	s.SetContext(cc)
 	zap.L().Info("New Player connected", zap.String("userName", cc.UserName), zap.String("playerId", cc.PlayerID), zap.String("cookie", cookie))
+	// TODO - re-join rooms if coming back from disconnect
 	return nil
 }
 
@@ -85,6 +85,12 @@ func (gs *GameServer) OnDisconnect(s socketio.Conn, reason string) {
 	defer deferRecover(nil)
 	cc := getConnectionContext(s)
 	zap.L().Warn("Disconnection", zap.String("playerId", cc.PlayerID))
+	for _, gid := range s.Rooms() {
+		l := getLobbyState(gid, gs.Redis)
+		if l.Host.PlayerID == cc.PlayerID {
+			// TODO need to pick a new host out of the players
+		}
+	}
 }
 
 func (gs *GameServer) OnError(s socketio.Conn, e error) {
@@ -111,6 +117,16 @@ func (gs *GameServer) OnCancelSearchForGame(s socketio.Conn, msg string) {
 func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 	defer deferRecover(s)
 	cc := getConnectionContext(s)
+	// check if user is allowed to create lobbies
+	user, err := mongoconn.GetUser(cc.UserName, gs.Mongo)
+	if err != nil {
+		handleError(err, s)
+		return
+	}
+	if !user.Empowered {
+		s.Emit(string(Warning), "You are not allowed to create lobbies")
+		return
+	}
 	// generate room name
 	unique := false
 	var gid string
@@ -124,8 +140,9 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 	s.Join(gid)
 
 	l := &Lobby{
-		Host:    cc,
-		Players: []ConnectionContext{cc},
+		Host:       cc,
+		Players:    []ConnectionContext{cc},
+		Spectators: make([]ConnectionContext, 0),
 	}
 
 	storeLobbyState(gid, l, gs.Redis)
@@ -139,7 +156,16 @@ func (gs *GameServer) OnJoinGame(s socketio.Conn, msg string) {
 	cc := getConnectionContext(s)
 	zap.L().Info("Player joining game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
 	s.Join(msg)
-	gs.Server.BroadcastToRoom(GNS, msg, string(LobbyUpdate), "todo event payload")
+	l := getLobbyState(msg, gs.Redis)
+	if len(l.Players) < 4 && !l.Started {
+		l.Players = append(l.Players, cc)
+	} else {
+		l.Spectators = append(l.Spectators, cc)
+	}
+
+	storeLobbyState(msg, l, gs.Redis)
+
+	broadcastRoomLobbyUpdate(msg, l.RemoveIDs(), gs.Server)
 }
 
 func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
@@ -147,7 +173,33 @@ func (gs *GameServer) OnLeaveGame(s socketio.Conn, msg string) {
 	cc := getConnectionContext(s)
 	zap.L().Info("Player leaving game room", zap.String("playerId", cc.PlayerID), zap.String("room", msg))
 	s.Leave(msg)
-	gs.Server.BroadcastToRoom(GNS, msg, string(LobbyUpdate), "todo event payload")
+
+	l := getLobbyState(msg, gs.Redis)
+	if l.Host.PlayerID == cc.PlayerID {
+		// find new host
+		for _, occ := range l.Players {
+			if occ.PlayerID != cc.PlayerID {
+				l.Host = occ
+				break
+			}
+		}
+	}
+	// check if user is in player list, and remove (if game is not started, move up spectator to player slot)
+	i := slices.IndexFunc(l.Players, func(c ConnectionContext) bool { return c.PlayerID == cc.PlayerID })
+	if i >= 0 {
+		l.Players = slices.Delete(l.Players, i, i+1)
+		if len(l.Spectators) > 0 {
+			l.Players = append(l.Players, l.Spectators[0])
+			l.Spectators = l.Spectators[1:]
+		}
+	}
+	// check if user is in spectator list, and remove
+	j := slices.IndexFunc(l.Spectators, func(c ConnectionContext) bool { return c.PlayerID == cc.PlayerID })
+	if i >= 0 {
+		l.Players = slices.Delete(l.Spectators, j, j+1)
+	}
+	storeLobbyState(msg, l, gs.Redis)
+	broadcastRoomLobbyUpdate(msg, l.RemoveIDs(), gs.Server)
 }
 
 func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
@@ -157,7 +209,7 @@ func (gs *GameServer) OnChatInRoom(s socketio.Conn, msg string) {
 	// unmarshal chat struct from json
 	cm, err := util.FromJSONString[game.ChatMessage](msg)
 	if err != nil {
-
+		return
 	}
 	// get game state from redis
 	g := getGameState(cm.Gid, gs.Redis)
@@ -213,7 +265,7 @@ func (gs *GameServer) OnStartGame(s socketio.Conn, msg string) {
 	broadcastRoomGameStart(msg, g, gs.Server)
 
 	// send prompt to player
-	gs.Server.ForEach(GNS, msg, func(c socketio.Conn) {
+	gs.Server.ForEach(NS, msg, func(c socketio.Conn) {
 		cc := c.Context().(ConnectionContext)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, s)
@@ -251,7 +303,7 @@ func (gs *GameServer) OnTakeTurnAction(s socketio.Conn, msg string) {
 		return
 	}
 	// else, the prompt is for the next player, then do something like this:
-	gs.Server.ForEach(GNS, pr.Gid, func(c socketio.Conn) {
+	gs.Server.ForEach(NS, pr.Gid, func(c socketio.Conn) {
 		cc := c.Context().(ConnectionContext)
 		if cc.PlayerID == g.CurrentTurn.PlayerID {
 			emitMessage("ActionPrompt", &prompt, c)

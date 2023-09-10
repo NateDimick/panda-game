@@ -61,7 +61,7 @@ func newSocketServer() *socketio.Server {
 	s.OnConnect(events.NS, gs.OnConnect)
 	s.OnDisconnect(events.NS, gs.OnDisconnect)
 	s.OnError(events.NS, gs.OnError)
-	s.OnEvent(events.GNS, string(events.TakeAction), gs.OnTakeTurnAction)
+	s.OnEvent(events.NS, string(events.TakeAction), gs.OnTakeTurnAction)
 	// and so on...
 	return s
 }

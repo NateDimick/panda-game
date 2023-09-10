@@ -31,22 +31,22 @@ func getConnectionContext(s socketio.Conn) ConnectionContext {
 
 func broadcastRoomLobbyUpdate(gameID string, lobby *UILobby, server *socketio.Server) {
 	msg, _ := util.ToJSONString(lobby)
-	server.BroadcastToRoom(GNS, gameID, string(LobbyUpdate), msg)
+	server.BroadcastToRoom(NS, gameID, string(LobbyUpdate), msg)
 }
 
 func broadcastRoomGameUpdate(gameID string, game *game.GameState, server *socketio.Server) {
 	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(GNS, gameID, string(GameUpdate), msg)
+	server.BroadcastToRoom(NS, gameID, string(GameUpdate), msg)
 }
 
 func broadcastRoomGameStart(gameID string, game *game.GameState, server *socketio.Server) {
 	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(GNS, gameID, string(GameStart), msg)
+	server.BroadcastToRoom(NS, gameID, string(GameStart), msg)
 }
 
 func broadcastRoomGameOver(gameID string, game *game.GameState, server *socketio.Server) {
 	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(GNS, gameID, string(GameOver), msg)
+	server.BroadcastToRoom(NS, gameID, string(GameOver), msg)
 }
 
 func getLobbyState(gameID string, conn redisconn.RedisConn) *Lobby {
