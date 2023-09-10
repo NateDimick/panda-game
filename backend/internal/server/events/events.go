@@ -43,8 +43,8 @@ const (
 )
 
 const (
-	gameSfx  string = "-g"
-	lobbySfx string = "-l"
+	gamePfx  string = "g-" // game prefix for redis keys
+	lobbyPfx string = "l-" // lobby prefix for redis keys
 )
 
 type GameServer struct {
@@ -125,7 +125,7 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 	var gid string
 	for !unique {
 		gid = NewGameID()
-		if err := gs.Redis.Get(context.Background(), gid+lobbySfx).Err(); err == redis.Nil {
+		if err := gs.Redis.Get(context.Background(), lobbyPfx+gid).Err(); err == redis.Nil {
 			unique = true
 		}
 	}

@@ -51,21 +51,21 @@ func broadcastRoomGameOver(gameID string, game *game.GameState, server *socketio
 }
 
 func getLobbyState(gameID string, conn redisconn.RedisConn) *Lobby {
-	l, _ := redisconn.GetThing[Lobby](gameID+lobbySfx, conn)
+	l, _ := redisconn.GetThing[Lobby](lobbyPfx+gameID, conn)
 	return l
 }
 
 func storeLobbyState(gameID string, lobby *Lobby, conn redisconn.RedisConn) {
-	redisconn.SetThing(gameID+lobbySfx, lobby, conn)
+	redisconn.SetThing(lobbyPfx+gameID, lobby, conn)
 }
 
 func getGameState(gameID string, conn redisconn.RedisConn) *game.GameState {
-	g, _ := redisconn.GetThing[game.GameState](gameID+gameSfx, conn)
+	g, _ := redisconn.GetThing[game.GameState](gamePfx+gameID, conn)
 	return g
 }
 
 func storeGameState(gameID string, game *game.GameState, conn redisconn.RedisConn) {
-	redisconn.SetThing(gameID+gameSfx, game, conn)
+	redisconn.SetThing(gamePfx+gameID, game, conn)
 }
 
 func emitMessage[T any](eventName string, message *T, conn socketio.Conn) {

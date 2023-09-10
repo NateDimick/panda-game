@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const sessionSfx string = "-session"
+const sessionPfx string = "s-" // session redis key prefix
 
 type AuthAPI struct {
 	mongo mongoconn.CollectionConn
@@ -116,7 +116,7 @@ func (a *AuthAPI) EmpowerUser(w http.ResponseWriter, r *http.Request) {
 	sessionID := sessionCookie.Value
 
 	// get session info
-	session, err := redisconn.GetThing[auth.UserSession](sessionID+sessionSfx, a.redis)
+	session, err := redisconn.GetThing[auth.UserSession](sessionPfx+sessionID, a.redis)
 	if err == redis.Nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Session expired, please log back in"))
@@ -206,7 +206,7 @@ func setSession(w http.ResponseWriter, record auth.UserRecord, redis redisconn.R
 		ExpireAt:  time.Now().Add(time.Hour * 24 * 7), // sessions can last 1 week
 	}
 	// store session
-	redisconn.SetThing(userSession.SessionID+sessionSfx, &userSession, redis)
+	redisconn.SetThing(sessionPfx+userSession.SessionID, &userSession, redis)
 	// write session id cookie
 	sessionCookie := http.Cookie{
 		Name:     "pandaGameSession",
