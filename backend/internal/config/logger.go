@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -12,9 +13,8 @@ func SetLogger() {
 		AddSource: true,
 		Level:     slog.LevelDebug,
 	}
-	f, _ := os.Open("panda-server.log")
 	stdoutLogger := slog.NewJSONHandler(os.Stdout, &options)
-	fileLogger := slog.NewJSONHandler(f, &options)
+	fileLogger := slog.NewJSONHandler(new(LogWriter), &options)
 	handler := &TeeHandler{
 		stdout: stdoutLogger,
 		file:   fileLogger,
@@ -53,4 +53,16 @@ func (t *TeeHandler) WithGroup(name string) slog.Handler {
 	t2.file = t.file.WithGroup(name)
 	t2.stdout = t.stdout.WithGroup(name)
 	return t2
+}
+
+type LogWriter struct{}
+
+func (l *LogWriter) Write(b []byte) (int, error) {
+	var f *os.File
+	f, err := os.OpenFile("panda-server.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	return fmt.Fprint(f, string(b))
 }

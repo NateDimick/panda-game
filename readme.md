@@ -17,3 +17,8 @@ A bamboo gardening game like *Takenoko*
 * Sveltkit
   * [socket.io](https://github.com/socketio/socket.io) client
   * [pixi.js](https://github.com/pixijs/pixijs) game renderer
+
+## Tools
+
+* Taskfile `go install github.com/go-task/task/v3/cmd/task@latest`
+* covreport `go install github.com/cancue/covreport@latest`

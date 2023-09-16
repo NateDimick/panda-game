@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
+	"pandagame/internal/redisconn"
 	"testing"
 	_ "unsafe"
 
@@ -24,12 +25,18 @@ func mockGetUser(name string, conn mongoconn.CollectionConn) (*auth.UserRecord, 
 
 }
 
+//go:linkname mockSetThing pandagame/internal/redisconn.SetThing
+func mockSetThing[T any](key string, thing *T, conn redisconn.RedisConn) error {
+	return nil
+}
+
 func TestLogin(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest(http.MethodPost, "/login", nil)
 	r.SetBasicAuth("nate", "hello")
 
 	api := new(AuthAPI)
+	api.redis = redisconn.NewRedisConn() // does not matter that it is the real impl, it will not be used by the mock function
 
 	api.LoginUser(w, r)
 

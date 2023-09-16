@@ -38,7 +38,8 @@ tasks:
     deps: [unit-test]
     dir: backend
     cmds:
-      - go tool cover -html .build/cover.out
+      - covreport -i .build/cover.out -o .build/cover.html
+      - open .build/cover.html
   server-docker:
     desc: build docker image for game server
     cmds:
@@ -50,9 +51,9 @@ tasks:
     desc: run the panda game locally
     dir: local
     cmd:
-      - docker-compose up --detach
+      - docker compose up --detach
   stop:
     desc: stop the panda game locally
     dir: local
     cmd:
-      - docker-compose down
+      - docker compose down

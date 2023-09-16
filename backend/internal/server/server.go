@@ -39,7 +39,7 @@ func NewServer() *Server {
 	r.Post("/register", a.RegisterUser)
 	r.Post("/login", a.LoginUser)
 	r.Post("/empower", a.EmpowerUser)
-	r.Get("/guest", a.LoginAsGuest)
+	r.Post("/guest", a.LoginAsGuest)
 	server := &Server{r, s}
 	return server
 }
