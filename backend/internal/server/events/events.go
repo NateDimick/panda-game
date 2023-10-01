@@ -1,7 +1,6 @@
 package events
 
 import (
-	"context"
 	"log/slog"
 	"pandagame/internal/auth"
 	"pandagame/internal/game"
@@ -125,7 +124,7 @@ func (gs *GameServer) OnCreateGameLobby(s socketio.Conn, msg string) {
 	var gid string
 	for !unique {
 		gid = NewGameID()
-		if err := gs.Redis.Get(context.Background(), lobbyPfx+gid).Err(); err == redis.Nil {
+		if _, err := redisconn.GetThing[Lobby](lobbyPfx+gid, gs.Redis); err == redis.Nil {
 			unique = true
 		}
 	}

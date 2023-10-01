@@ -2,3 +2,4 @@
 .task/
 script-venv
 *.log
+mock_*

@@ -25,7 +25,7 @@ func NewMongoConn() CollectionConn {
 }
 
 func GetUser(uname string, conn CollectionConn) (*auth.UserRecord, error) {
-	result := conn.FindOne(context.TODO(), bson.M{"name": uname})
+	result := conn.FindOne(context.Background(), bson.M{"name": uname})
 	if err := result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
 			slog.Info("no user with name " + uname)
@@ -42,7 +42,7 @@ func GetUser(uname string, conn CollectionConn) (*auth.UserRecord, error) {
 }
 
 func StoreUser(user *auth.UserRecord, conn CollectionConn) error {
-	result, err := conn.InsertOne(context.TODO(), user)
+	result, err := conn.InsertOne(context.Background(), user)
 	if err != nil {
 		return err
 	}

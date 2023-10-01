@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 )
@@ -64,5 +63,5 @@ func (l *LogWriter) Write(b []byte) (int, error) {
 		return 0, err
 	}
 	defer f.Close()
-	return fmt.Fprint(f, string(b))
+	return f.Write(b)
 }

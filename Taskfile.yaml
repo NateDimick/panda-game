@@ -21,24 +21,36 @@ tasks:
       - ./**/*.go
     generates:
       - .build/panda-game-server
+  mocks:
+    desc: generate mock implementations of interfaces
+    dir: backend
+    cmds:
+      - mockery
+    sources:
+      - ./**/*.go
+      - ./.mockery.yaml
+    generates:
+      - ./**/mock_*.go
   unit-test:
     desc: run unit tests
     aliases: [ut, test]
-    deps: [build-dir]
+    deps: [build-dir, mocks]
     dir: backend
     cmds:
       - go test ./... -v -coverprofile .build/cover.out
+      - cat .build/cover.out | grep -v "mock_" > .build/cover_clean.out
     sources: 
       - ./**/*.go
     generates:
       - .build/cover.out
+      - .build/cover_clean.out
   test-coverage:
     desc: display unit test coverage profile
     aliases: [utc, coverage]
     deps: [unit-test]
     dir: backend
     cmds:
-      - covreport -i .build/cover.out -o .build/cover.html
+      - covreport -i .build/cover_clean.out -o .build/cover.html
       - open .build/cover.html
   server-docker:
     desc: build docker image for game server
