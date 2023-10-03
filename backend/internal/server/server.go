@@ -1,8 +1,6 @@
 package server
 
 import (
-	"net/http"
-	"os"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/server/events"
@@ -12,16 +10,12 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	socketio "github.com/googollee/go-socket.io"
-	"github.com/googollee/go-socket.io/engineio"
-	"github.com/googollee/go-socket.io/engineio/transport"
-	"github.com/googollee/go-socket.io/engineio/transport/polling"
-	"github.com/googollee/go-socket.io/engineio/transport/websocket"
+	"github.com/njones/socketio"
 )
 
 type Server struct {
 	Router *chi.Mux
-	Socket *socketio.Server
+	Socket *socketio.ServerV4
 }
 
 // setup a new server (chi mux) with all middlewares and routes
@@ -44,36 +38,10 @@ func NewServer() *Server {
 	return server
 }
 
-func newSocketServer() *socketio.Server {
-	s := socketio.NewServer(&engineio.Options{
-		Transports: []transport.Transport{
-			&polling.Transport{
-				CheckOrigin: allowOriginFunc,
-			},
-			&websocket.Transport{
-				CheckOrigin: allowOriginFunc,
-			},
-		},
-		PingTimeout:  time.Second,
-		PingInterval: time.Millisecond,
-	})
-	if _, err := s.Adapter(&socketio.RedisAdapterOptions{
-		Addr: os.Getenv("REDIS_ADDR"),
-		DB:   0,
-	}); err != nil {
-		panic("Could not set redis adapter for socket server " + err.Error())
-	}
-	gs := events.GameServer{Server: s, Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
-	// add callbacks
-	s.OnConnect(events.NS, gs.OnConnect)
-	s.OnDisconnect(events.NS, gs.OnDisconnect)
-	s.OnError(events.NS, gs.OnError)
-	s.OnEvent(events.NS, string(events.TakeAction), gs.OnTakeTurnAction)
-	// and so on...
+func newSocketServer() *socketio.ServerV4 {
+	s := socketio.NewServerV4()
+	gs := events.GameServer{ServerV4: s, Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
+	// only register onConnect. It registers all other events to the socket connection.
+	s.OnConnect(gs.OnConnect)
 	return s
-}
-
-// from the examples for go-socketio
-var allowOriginFunc = func(r *http.Request) bool {
-	return true
 }

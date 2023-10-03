@@ -4,6 +4,9 @@ tasks:
   default:
     cmds:
       - task -l
+  setup:
+    desc: initialize project 
+    deps: [build-dir, mocks]
   build-dir:
     internal: true
     dir: backend

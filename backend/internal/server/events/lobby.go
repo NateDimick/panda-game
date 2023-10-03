@@ -3,9 +3,9 @@ package events
 import "pandagame/internal/auth"
 
 type Lobby struct {
-	Host       auth.UserSession
-	Players    []auth.UserSession
-	Spectators []auth.UserSession
+	Host       *auth.UserSession
+	Players    []*auth.UserSession
+	Spectators []*auth.UserSession
 	Started    bool
 }
 

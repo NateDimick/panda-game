@@ -8,46 +8,28 @@ import (
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
 
-	socketio "github.com/googollee/go-socket.io"
+	"github.com/njones/socketio"
+	"github.com/njones/socketio/serialize"
 )
 
 // TODO this file needs error handling and logging
 
-func getConnectionContext(s socketio.Conn) auth.UserSession {
-	if s == nil {
-		return auth.UserSession{
-			PlayerID: "No Connection",
-			Name:     "No Connection",
-		}
+func getSession(s *socketio.SocketV4, r redisconn.RedisConn) (*auth.UserSession, error) {
+	sessionCookie, err := s.Request().Cookie("pandaGameSession")
+	if err != nil {
+		return nil, err
 	}
-	if s.Context() == nil {
-		return auth.UserSession{
-			PlayerID: fmt.Sprintf("No Context for %s", s.ID()),
-			Name:     fmt.Sprintf("No Context for %s", s.ID()),
-		}
+	slog.Info("Found connection cookie", slog.String("cookie", sessionCookie.Value))
+	us, err := redisconn.GetThing[auth.UserSession](sessionCookie.Value+"-session", r)
+	if err != nil {
+		return nil, err
 	}
-	cc := s.Context().(auth.UserSession)
-	return cc
+	return us, nil
 }
 
-func broadcastRoomLobbyUpdate(gameID string, lobby *UILobby, server *socketio.Server) {
-	msg, _ := util.ToJSONString(lobby)
-	server.BroadcastToRoom(NS, gameID, string(LobbyUpdate), msg)
-}
-
-func broadcastRoomGameUpdate(gameID string, game *game.GameState, server *socketio.Server) {
-	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(NS, gameID, string(GameUpdate), msg)
-}
-
-func broadcastRoomGameStart(gameID string, game *game.GameState, server *socketio.Server) {
-	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(NS, gameID, string(GameStart), msg)
-}
-
-func broadcastRoomGameOver(gameID string, game *game.GameState, server *socketio.Server) {
-	msg, _ := util.ToJSONString(game)
-	server.BroadcastToRoom(NS, gameID, string(GameOver), msg)
+func broadcastEventToGameRoom[T any](gameID string, eventType ServerEventType, eventBody *T, socket *socketio.SocketV4) {
+	msg, _ := util.ToJSONString(eventBody)
+	socket.To(gameID).Emit(string(eventType), serialize.String(msg))
 }
 
 func getLobbyState(gameID string, conn redisconn.RedisConn) *Lobby {
@@ -68,20 +50,15 @@ func storeGameState(gameID string, game *game.GameState, conn redisconn.RedisCon
 	redisconn.SetThing(gamePfx+gameID, game, conn)
 }
 
-func emitMessage[T any](eventName string, message *T, conn socketio.Conn) {
-	msg, _ := util.ToJSONString(message)
-	conn.Emit(eventName, msg)
+func handleError(err error, conn *socketio.SocketV4) {
+	conn.Emit(string(Warning), serialize.Error(err))
 }
 
-func handleError(err error, conn socketio.Conn) {
-	conn.Emit(string(Warning), err.Error())
-}
-
-func deferRecover(conn socketio.Conn) {
+func deferRecover(conn *socketio.SocketV4) {
 	if err := recover(); err != nil {
 		slog.Error(fmt.Sprintf("event handler panic: %+v", err))
-		if conn != nil {
-			handleError(fmt.Errorf("%+v", err), conn)
-		}
+		// if conn != nil {
+		// 	handleError(fmt.Errorf("%+v", err), conn)
+		// }
 	}
 }
