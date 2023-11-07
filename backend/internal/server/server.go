@@ -1,7 +1,10 @@
 package server
 
 import (
+	"net/http"
+	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
+	"pandagame/internal/pandaplex"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/server/events"
 	custommw "pandagame/internal/server/middleware"
@@ -10,12 +13,11 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/njones/socketio"
 )
 
 type Server struct {
 	Router *chi.Mux
-	Socket *socketio.ServerV4
+	Plexer pandaplex.Plexer
 }
 
 // setup a new server (chi mux) with all middlewares and routes
@@ -26,22 +28,27 @@ func NewServer() *Server {
 	r.Use(middleware.Timeout(time.Minute))
 	r.Use(custommw.RequestLogger)
 	// socket router
-	s := newSocketServer()
-	r.Handle("/socket/", s)
+	gs := events.GameServer{Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
+	plexerSettings := func(c *pandaplex.PlexerConfig) {
+		c.Handler = gs.HandleMessage
+		c.IdGenerator = ConnectionIdIsPlayerId
+		// use default storage and relayer for development - in-memory solutions
+	}
+	socketPlexer := pandaplex.NewPlexer(plexerSettings)
 	// auth api
 	a := routes.NewAuthAPI(mongoconn.NewMongoConn(), redisconn.NewRedisConn())
 	r.Post("/register", a.RegisterUser)
 	r.Post("/login", a.LoginUser)
 	r.Post("/empower", a.EmpowerUser)
 	r.Post("/guest", a.LoginAsGuest)
-	server := &Server{r, s}
+	r.Handle("/ws", socketPlexer)
+	server := &Server{r, socketPlexer}
 	return server
 }
 
-func newSocketServer() *socketio.ServerV4 {
-	s := socketio.NewServerV4()
-	gs := events.GameServer{ServerV4: s, Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
-	// only register onConnect. It registers all other events to the socket connection.
-	s.OnConnect(gs.OnConnect)
-	return s
+func ConnectionIdIsPlayerId(r *http.Request) string {
+	rc := redisconn.NewRedisConn()
+	sessionCookie, _ := r.Cookie("pandaGameSession")
+	us, _ := redisconn.GetThing[auth.UserSession](sessionCookie.Value+"-session", rc)
+	return us.PlayerID
 }

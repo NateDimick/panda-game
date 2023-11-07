@@ -1,24 +1,27 @@
 package events
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"pandagame/internal/auth"
 	"pandagame/internal/game"
+	"pandagame/internal/pandaplex"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
-
-	"github.com/njones/socketio"
-	"github.com/njones/socketio/serialize"
+	"slices"
 )
 
 // TODO this file needs error handling and logging
 
-func getSession(s *socketio.SocketV4, r redisconn.RedisConn) (*auth.UserSession, error) {
-	sessionCookie, err := s.Request().Cookie("pandaGameSession")
-	if err != nil {
-		return nil, err
+func getSession(plexer pandaplex.PlexerInternal, r redisconn.RedisConn) (*auth.UserSession, error) {
+	sessionIndex := slices.IndexFunc(plexer.Cookies(), func(c *http.Cookie) bool { return c.Name == "pandaGameSession" })
+	if sessionIndex == -1 {
+		return nil, errors.New("No pandaGameSession cookie")
 	}
+	sessionCookie := plexer.Cookies()[sessionIndex] //("pandaGameSession")
+
 	slog.Info("Found connection cookie", slog.String("cookie", sessionCookie.Value))
 	us, err := redisconn.GetThing[auth.UserSession](sessionCookie.Value+"-session", r)
 	if err != nil {
@@ -27,9 +30,13 @@ func getSession(s *socketio.SocketV4, r redisconn.RedisConn) (*auth.UserSession,
 	return us, nil
 }
 
-func broadcastEventToGameRoom[T any](gameID string, eventType ServerEventType, eventBody *T, socket *socketio.SocketV4) {
-	msg, _ := util.ToJSONString(eventBody)
-	socket.To(gameID).Emit(string(eventType), serialize.String(msg))
+func broadcastEventToGameRoom[T any](gameID string, eventType ServerEventType, eventBody *T, plexer pandaplex.PlexerInternal) {
+	e := &ServerEvent{
+		Type:    eventType,
+		Payload: eventBody,
+	}
+	msg, _ := util.ToJSONString(e)
+	plexer.SendToRoom(msg, gameID)
 }
 
 func getLobbyState(gameID string, conn redisconn.RedisConn) *Lobby {
@@ -50,11 +57,7 @@ func storeGameState(gameID string, game *game.GameState, conn redisconn.RedisCon
 	redisconn.SetThing(gamePfx+gameID, game, conn)
 }
 
-func handleError(err error, conn *socketio.SocketV4) {
-	conn.Emit(string(Warning), serialize.Error(err))
-}
-
-func deferRecover(conn *socketio.SocketV4) {
+func deferRecover(conn pandaplex.PlexerInternal) {
 	if err := recover(); err != nil {
 		slog.Error(fmt.Sprintf("event handler panic: %+v", err))
 		// if conn != nil {

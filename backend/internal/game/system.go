@@ -71,6 +71,7 @@ type Prompt struct {
 	SelectFrom []interface{}
 	Time       int
 	Pid        string
+	Gid        string
 }
 
 type PromptResponse struct {

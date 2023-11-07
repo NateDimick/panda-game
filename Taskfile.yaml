@@ -60,7 +60,7 @@ tasks:
     cmds:
       - docker build -f docker/server.dockerfile -t panda-game-server:latest .
     sources:
-      - backend/*
+      - backend/.build/panda-game-server
       - docker/server.dockerfile
   run:
     desc: run the panda game locally

@@ -1,21 +1,21 @@
 package events
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"pandagame/internal/auth"
 	"pandagame/internal/game"
 	"pandagame/internal/mongoconn"
+	"pandagame/internal/pandaplex"
 	"pandagame/internal/redisconn"
 	"pandagame/internal/util"
 	"slices"
+	"strings"
 
-	"github.com/njones/socketio"
-	"github.com/njones/socketio/serialize"
 	"github.com/redis/go-redis/v9"
 )
-
-const NS string = "/" // namespace - there is only one namespace in this application
 
 type ServerEventType string
 
@@ -32,15 +32,27 @@ const (
 type ClientEventType string
 
 const (
-	JoinGame       ClientEventType = "JoinGame"
-	LeaveGame      ClientEventType = "LeaveGame"
-	GameChat       ClientEventType = "GameChat"
-	TakeAction     ClientEventType = "TakeAction"
-	Reprompt       ClientEventType = "RePrompt"
-	CreateGame     ClientEventType = "CreateGame"
-	StartGame      ClientEventType = "StartGame"
-	ChangeSettings ClientEventType = "ChangeSettings"
+	JoinGame        ClientEventType = "JoinGame"
+	LeaveGame       ClientEventType = "LeaveGame"
+	GameChat        ClientEventType = "GameChat"
+	TakeAction      ClientEventType = "TakeAction"
+	Reprompt        ClientEventType = "RePrompt"
+	CreateGame      ClientEventType = "CreateGame"
+	StartGame       ClientEventType = "StartGame"
+	ChangeSettings  ClientEventType = "ChangeSettings"
+	Matchmake       ClientEventType = "Matchmake"
+	CancelMatchmake ClientEventType = "CancelMatchmake"
 )
+
+type ClientEvent struct {
+	Type    ClientEventType `json:"messageType"`
+	Payload json.RawMessage `json:"message"`
+}
+
+type ServerEvent struct {
+	Type    ServerEventType `json:"messageType"`
+	Payload interface{}     `json:"message"`
+}
 
 const (
 	gamePfx  string = "g-" // game prefix for redis keys
@@ -48,45 +60,57 @@ const (
 )
 
 type GameServer struct {
-	*socketio.ServerV4
 	Redis redisconn.RedisConn
 	Mongo mongoconn.CollectionConn
 }
 
-func (gs *GameServer) OnConnect(s *socketio.SocketV4) error {
-	defer deferRecover(s)
-	// a new user connects
-	slog.Info("Player connection happening", slog.String("sid", string(s.ID())))
-	us, err := getSession(s, gs.Redis)
-	if err != nil {
-		s.Emit(string(Warning), serialize.String("please log in to connect"))
-		return err
+func (g *GameServer) HandleMessage(p pandaplex.PlexerInternal, message string) {
+	slog.Info("game server got a message", slog.String("message", message))
+
+	event := new(ClientEvent)
+	json.NewDecoder(strings.NewReader(message)).Decode(event)
+
+	switch event.Type {
+	case JoinGame:
+		//
+		g.OnJoinGame(p, string(event.Payload))
+	case LeaveGame:
+		//
+		g.OnLeaveGame(p, string(event.Payload))
+	case GameChat:
+		//
+		cm := new(game.ChatMessage)
+		json.NewDecoder(bytes.NewReader(event.Payload)).Decode(cm)
+		g.OnChatInRoom(p, *cm)
+	case TakeAction:
+		//
+		pr := new(game.PromptResponse)
+		json.NewDecoder(bytes.NewReader(event.Payload)).Decode(pr)
+		g.OnTakeTurnAction(p, *pr)
+	case Reprompt:
+		//
+	case CreateGame:
+		//
+		g.OnCreateGameLobby(p)
+	case StartGame:
+		//
+		g.OnStartGame(p, string(event.Payload))
+	case ChangeSettings:
+		//
+	case Matchmake:
+		//
+	case CancelMatchmake:
+		//
+	default:
+		resp := &ServerEvent{
+			Type: Warning,
+			Payload: map[string]error{
+				"error": errors.New("unsupported event type"),
+			},
+		}
+		warning, _ := util.ToJSONString(resp)
+		p.Reply(warning)
 	}
-
-	// join a personal room to receive personal messages
-	if err := s.Join(us.PlayerID); err != nil {
-		slog.Error("Could not join personal room", slog.String("error", err.Error()))
-	}
-
-	// need to register all callbacks here
-	s.OnDisconnect(func(reason string) {
-		// slog the input string
-		slog.Info("Disconnect", slog.String("user", us.Name), slog.String("id", us.PlayerID), slog.String("reason", reason))
-
-		// leave personal room
-		s.Leave(us.PlayerID)
-
-		// leave game room
-		// TODO
-	})
-	s.On(string(TakeAction), EventHandler{s: s, f: gs.OnTakeTurnAction})
-	// chat
-	// join game
-	// start game
-
-	slog.Info("New Player connected", slog.String("userName", us.Name), slog.String("playerId", us.PlayerID))
-	// TODO - re-join rooms if coming back from disconnect
-	return nil
 }
 
 // func (gs *GameServer) OnDisconnect(reason string) {
@@ -101,17 +125,6 @@ func (gs *GameServer) OnConnect(s *socketio.SocketV4) error {
 // 	}
 // }
 
-// new socketio lib requires this clunky interface for handling events
-type EventHandler struct {
-	s *socketio.SocketV4
-	f func(*socketio.SocketV4, ...interface{}) error
-}
-
-func (eh EventHandler) Callback(data ...interface{}) error {
-	slog.Info("event data", slog.Any("data", data))
-	return eh.f(eh.s, data...)
-}
-
 // func (gs *GameServer) OnError(s socketio.Conn, e error) {
 // 	defer deferRecover(s)
 // 	cc := getSession(s)
@@ -123,27 +136,32 @@ func (eh EventHandler) Callback(data ...interface{}) error {
 // 	}
 // }
 
-func (gs *GameServer) OnSearchForGame(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	// matchmaking is a way future feature
-	return nil
-}
+// func (gs *GameServer) OnSearchForGame(s *socketio.SocketV4, data ...interface{}) error {
+// 	defer deferRecover(s)
+// 	// matchmaking is a way future feature
+// 	return nil
+// }
 
-func (gs *GameServer) OnCancelSearchForGame(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	// matchmaking is a way future feature
-	return nil
-}
+// func (gs *GameServer) OnCancelSearchForGame(s *socketio.SocketV4, data ...interface{}) error {
+// 	defer deferRecover(s)
+// 	// matchmaking is a way future feature
+// 	return nil
+// }
 
-func (gs *GameServer) OnCreateGameLobby(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnCreateGameLobby(p pandaplex.PlexerInternal) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
 	// check if user is allowed to create lobbies
 	if !us.Empowered {
-		s.To(us.PlayerID).Emit(string(Warning), serialize.String("You are not allowed to create lobbies"))
+		se := &ServerEvent{
+			Type:    Warning,
+			Payload: "You are not allowed to create lobbies",
+		}
+		resp, _ := util.ToJSONString(se)
+		p.Reply(resp)
 		return errors.New("must be empowered to create lobbies")
 	}
 	// generate room name
@@ -156,7 +174,7 @@ func (gs *GameServer) OnCreateGameLobby(s *socketio.SocketV4, data ...interface{
 		}
 	}
 	// join that room
-	s.Join(gid)
+	p.JoinRoom(gid)
 
 	l := &Lobby{
 		Host:       us,
@@ -167,49 +185,43 @@ func (gs *GameServer) OnCreateGameLobby(s *socketio.SocketV4, data ...interface{
 	storeLobbyState(gid, l, gs.Redis)
 
 	// emit lobby update to the room
-	broadcastEventToGameRoom(gid, LobbyUpdate, l.RemoveIDs(), s)
+	broadcastEventToGameRoom(gid, LobbyUpdate, l.RemoveIDs(), p)
 	return nil
 }
 
-func (gs *GameServer) OnJoinGame(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnJoinGame(p pandaplex.PlexerInternal, roomId string) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
-	msg, ok := data[0].(string)
-	if !ok {
-		return errors.New("bad format join room message")
-	}
-	slog.Info("Player joining game room", slog.String("playerId", us.PlayerID), slog.String("room", msg))
-	s.Join(msg)
-	l := getLobbyState(msg, gs.Redis)
+
+	slog.Info("Player joining game room", slog.String("playerId", us.PlayerID), slog.String("room", roomId))
+	p.JoinRoom(roomId)
+	l := getLobbyState(roomId, gs.Redis)
 	if len(l.Players) < 4 && !l.Started {
 		l.Players = append(l.Players, us)
 	} else {
 		l.Spectators = append(l.Spectators, us)
 	}
 
-	storeLobbyState(msg, l, gs.Redis)
+	storeLobbyState(roomId, l, gs.Redis)
 
-	broadcastEventToGameRoom(msg, LobbyUpdate, l.RemoveIDs(), s)
+	broadcastEventToGameRoom(roomId, LobbyUpdate, l.RemoveIDs(), p)
 	return nil
 }
 
-func (gs *GameServer) OnLeaveGame(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnLeaveGame(p pandaplex.PlexerInternal, roomId string) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
-	msg, ok := data[0].(string)
-	if !ok {
-		return errors.New("bad format leave room message")
-	}
-	slog.Info("Player leaving game room", slog.String("playerId", us.PlayerID), slog.String("room", msg))
-	s.Leave(msg)
 
-	l := getLobbyState(msg, gs.Redis)
+	slog.Info("Player leaving game room", slog.String("playerId", us.PlayerID), slog.String("room", roomId))
+	p.LeaveRoom(roomId)
+
+	l := getLobbyState(roomId, gs.Redis)
 	if l.Host.PlayerID == us.PlayerID {
 		// find new host
 		for _, occ := range l.Players {
@@ -233,58 +245,58 @@ func (gs *GameServer) OnLeaveGame(s *socketio.SocketV4, data ...interface{}) err
 	if i >= 0 {
 		l.Players = slices.Delete(l.Spectators, j, j+1)
 	}
-	storeLobbyState(msg, l, gs.Redis)
-	broadcastEventToGameRoom(msg, LobbyUpdate, l.RemoveIDs(), s)
+	storeLobbyState(roomId, l, gs.Redis)
+	broadcastEventToGameRoom(roomId, LobbyUpdate, l.RemoveIDs(), p)
 	return nil
 }
 
-func (gs *GameServer) OnChatInRoom(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnChatInRoom(p pandaplex.PlexerInternal, cm game.ChatMessage) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
-	msg, ok := data[0].(string)
-	if !ok {
-		return errors.New("bad format leave room message")
-	}
-	slog.Info("Player Chat Message", slog.String("playerId", us.PlayerID), slog.String("chat", msg))
-	// unmarshal chat struct from json
-	cm, err := util.FromJSONString[game.ChatMessage](msg)
-	if err != nil {
-		return err
-	}
+
+	slog.Info("Player Chat Message", slog.String("playerId", us.PlayerID), slog.String("chat", cm.Message))
 	// get game state from redis
+	cm.From = us.Name
 	g := getGameState(cm.Gid, gs.Redis)
 	// add chat message
-	g.ChatLog = append(g.ChatLog, *cm)
+	g.ChatLog = append(g.ChatLog, cm)
 	// store game state
 	storeGameState(cm.Gid, g, gs.Redis)
 	// emit game state to room
-	broadcastEventToGameRoom(cm.Gid, GameUpdate, g, s)
+	broadcastEventToGameRoom(cm.Gid, GameUpdate, g, p)
 	return nil
 }
 
-func (gs *GameServer) OnStartGame(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnStartGame(p pandaplex.PlexerInternal, roomId string) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
-	msg, ok := data[0].(string)
-	if !ok {
-		return errors.New("bad format leave room message")
-	}
+
 	// check if user is empowered to start games
-	l := getLobbyState(msg, gs.Redis)
+	l := getLobbyState(roomId, gs.Redis)
 
 	if us.PlayerID != l.Host.PlayerID {
-		s.Emit(string(Warning), serialize.String("You're not the Host"))
+		se := &ServerEvent{
+			Type:    Warning,
+			Payload: "You're not the Host",
+		}
+		resp, _ := util.ToJSONString(se)
+		p.Reply(resp)
 		return errors.New("only the host can start the game")
 	}
 
 	if len(l.Players) < 2 {
-		s.Emit(string(Warning), serialize.String("Not enough Players"))
+		se := &ServerEvent{
+			Type:    Warning,
+			Payload: "Not enough Players",
+		}
+		resp, _ := util.ToJSONString(se)
+		p.Reply(resp)
 		return errors.New("2 or more players required to play")
 	}
 
@@ -307,61 +319,65 @@ func (gs *GameServer) OnStartGame(s *socketio.SocketV4, data ...interface{}) err
 	prompt := g.NextChooseActionPrompt()
 	g.CurrentTurn.CurrentPrompt = prompt
 
-	storeGameState(msg, g, gs.Redis)
+	storeGameState(roomId, g, gs.Redis)
 
 	l.Started = true
 
-	storeLobbyState(msg, l, gs.Redis)
+	storeLobbyState(roomId, l, gs.Redis)
 
-	broadcastEventToGameRoom(msg, GameStart, g, s)
+	broadcastEventToGameRoom(roomId, GameStart, g, p)
 
 	// send prompt to player
-	p, _ := util.ToJSONString(&prompt)
-	s.To(g.CurrentTurn.PlayerID).Emit("ActionPrompt", serialize.String(p))
+	se := &ServerEvent{
+		Type:    ActionPrompt,
+		Payload: prompt,
+	}
+	pe, _ := util.ToJSONString(se)
+	p.SendTo(pe, g.CurrentTurn.PlayerID)
 	return nil
 }
 
-func (gs *GameServer) OnTakeTurnAction(s *socketio.SocketV4, data ...interface{}) error {
-	defer deferRecover(s)
-	us, err := getSession(s, gs.Redis)
+func (gs *GameServer) OnTakeTurnAction(p pandaplex.PlexerInternal, pr game.PromptResponse) error {
+	defer deferRecover(p)
+	us, err := getSession(p, gs.Redis)
 	if err != nil {
 		return err
 	}
-	msg, ok := data[0].(string)
-	if !ok {
-		return errors.New("bad format leave room message")
-	}
-	slog.Info("Player is taking action", slog.String("playerId", us.PlayerID), slog.Any("action", msg))
-	// convert msg to PromptResponse
-	pr, err := util.FromJSONString[game.PromptResponse](msg)
-	if err != nil {
-		handleError(err, s)
-		return err
-	}
+
+	slog.Info("Player is taking action", slog.String("playerId", us.PlayerID), slog.Any("action", pr.Action))
 	// get game state from cache
 	g := getGameState(pr.Gid, gs.Redis)
 
 	if us.PlayerID != g.CurrentTurn.PlayerID {
-		s.Emit(string(Warning), serialize.String("It's not your turn"))
+		se := &ServerEvent{
+			Type:    Warning,
+			Payload: "It's not your turn",
+		}
+		resp, _ := util.ToJSONString(se)
+		p.Reply(resp)
 		return errors.New("it is not your turn")
 	}
 
 	// do game thing
-	prompt := game.GameFlow(g, *pr)
+	prompt := game.GameFlow(g, pr)
 
 	// store game state
 	storeGameState(pr.Gid, g, gs.Redis)
 
-	p, _ := util.ToJSONString(&prompt)
+	se := &ServerEvent{
+		Type:    ActionPrompt,
+		Payload: prompt,
+	}
+	pe, _ := util.ToJSONString(se)
 	if g.CurrentTurn.PlayerID == us.PlayerID {
 		// send prompt to current player
-		s.In(us.PlayerID).Emit("ActionPrompt", serialize.String(p))
+		p.Reply(pe)
 	} else {
 		// else, the prompt is for the next player, then do something like this:
-		s.In(g.CurrentTurn.PlayerID).Emit("ActionPrompt", serialize.String(p))
+		p.SendTo(pe, g.CurrentTurn.PlayerID)
 	}
 
 	// broadcast gamestate to room
-	broadcastEventToGameRoom(pr.Gid, GameUpdate, g, s)
+	broadcastEventToGameRoom(pr.Gid, GameUpdate, g, p)
 	return nil
 }

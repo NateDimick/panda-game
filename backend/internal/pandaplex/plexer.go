@@ -47,6 +47,8 @@ type PlexerInternal interface {
 	ID() string
 	// request headers of the connection
 	Headers() http.Header
+	// request cookies
+	Cookies() []*http.Cookie
 	// send a message back down on the same connection
 	Reply(message string)
 	// send the message to each specified connection id
@@ -81,6 +83,7 @@ type plexerInternalImpl struct {
 	id      string
 	config  *PlexerConfig
 	headers http.Header
+	cookies []*http.Cookie
 }
 
 // configure a new plexer
@@ -121,6 +124,7 @@ func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			config:  p.config,
 			id:      connId,
 			headers: r.Header,
+			cookies: r.Cookies(),
 		}
 
 		for {
@@ -175,6 +179,10 @@ func (p *plexerInternalImpl) ID() string {
 
 func (p *plexerInternalImpl) Headers() http.Header {
 	return p.headers
+}
+
+func (p *plexerInternalImpl) Cookies() []*http.Cookie {
+	return p.cookies
 }
 
 // send a message back down on the same connection
