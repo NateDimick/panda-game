@@ -1,14 +1,7 @@
 
 import requests
-import socketio
 from requests.auth import HTTPBasicAuth
-
-sio = socketio.Client()
-
-@sio.on("*")
-def catch_all(event, data):
-    print("EVENT", event)
-    print("DATA", data)
+from websockets.sync.client import connect
 
 def demo():
     # register
@@ -21,23 +14,24 @@ def demo():
     if resp.status_code != 201 and resp.status_code != 409:
         print(resp.text)
         exit()
-    # login
+    # login as new user
     resp = requests.post("http://localhost:3000/login", auth=HTTPBasicAuth("script", "tpircs"))
     if resp.status_code != 200:
         print(resp.text)
         exit()
+    # switch to pre-created user by create-mongo-db.py
+    
     # connect
     print("RESP COOKIE", resp.cookies.items())
     print("RESP HEADERS", resp.headers.items())
-    uname = resp.cookies.get("UserName")
-    pid = resp.cookies.get("PlayerId")
     sio_headers = {
         "Cookie": resp.headers.get("Set-Cookie")
     }
-    sio.connect("http://localhost:3000", socketio_path="socket", namespaces="/", headers=sio_headers)
-    print(sio.sid)
-
-    sio.disconnect()
+    websocket = connect("ws://localhost:3000/ws", additional_headers=sio_headers)
+    websocket.send("{\"messageType\": \"blah\", \"message\": \"foobar\"}")
+    resp = websocket.recv()
+    print(resp)
+    
 
 
 if __name__ == "__main__":

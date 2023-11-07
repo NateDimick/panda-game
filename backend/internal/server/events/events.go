@@ -104,8 +104,8 @@ func (g *GameServer) HandleMessage(p pandaplex.PlexerInternal, message string) {
 	default:
 		resp := &ServerEvent{
 			Type: Warning,
-			Payload: map[string]error{
-				"error": errors.New("unsupported event type"),
+			Payload: map[string]string{
+				"error": "unsupported event type",
 			},
 		}
 		warning, _ := util.ToJSONString(resp)

@@ -23,7 +23,7 @@ func getSession(plexer pandaplex.PlexerInternal, r redisconn.RedisConn) (*auth.U
 	sessionCookie := plexer.Cookies()[sessionIndex] //("pandaGameSession")
 
 	slog.Info("Found connection cookie", slog.String("cookie", sessionCookie.Value))
-	us, err := redisconn.GetThing[auth.UserSession](sessionCookie.Value+"-session", r)
+	us, err := redisconn.GetThing[auth.UserSession]("s-"+sessionCookie.Value, r)
 	if err != nil {
 		return nil, err
 	}

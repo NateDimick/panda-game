@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
@@ -43,12 +44,14 @@ func NewServer() *Server {
 	r.Post("/guest", a.LoginAsGuest)
 	r.Handle("/ws", socketPlexer)
 	server := &Server{r, socketPlexer}
+	socketPlexer.Start()
 	return server
 }
 
 func ConnectionIdIsPlayerId(r *http.Request) string {
+	slog.Info("getting connection id", slog.Any("headers", r.Header))
 	rc := redisconn.NewRedisConn()
 	sessionCookie, _ := r.Cookie("pandaGameSession")
-	us, _ := redisconn.GetThing[auth.UserSession](sessionCookie.Value+"-session", rc)
+	us, _ := redisconn.GetThing[auth.UserSession]("s-"+sessionCookie.Value, rc)
 	return us.PlayerID
 }
