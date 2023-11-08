@@ -1,7 +1,5 @@
 package pandaplex
 
-const broadcastAllRecipients string = "all"
-
 // a relayer can relay across multiple instances running the plexer
 // if one plexer communicates from client to server, then a relayer communicates server to server
 type PlexerRelayer interface {
@@ -12,6 +10,7 @@ type PlexerRelayer interface {
 type RelayMessage struct {
 	Message      string
 	RecipientIds []string
+	All          bool
 }
 
 type inMemRelayer struct {

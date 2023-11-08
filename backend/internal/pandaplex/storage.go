@@ -1,6 +1,9 @@
 package pandaplex
 
-import "slices"
+import (
+	"slices"
+	"sync"
+)
 
 type PlexerStorage interface {
 	AddToRoom(connId string, roomId string)
@@ -10,6 +13,7 @@ type PlexerStorage interface {
 
 type inMemStorage struct {
 	rooms map[string][]string
+	lock  sync.RWMutex
 }
 
 func NewInMemStorage() PlexerStorage {
@@ -19,6 +23,8 @@ func NewInMemStorage() PlexerStorage {
 }
 
 func (i *inMemStorage) AddToRoom(id, roomId string) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 	members, ok := i.rooms[roomId]
 	if ok {
 		if slices.Contains(members, id) {
@@ -31,6 +37,8 @@ func (i *inMemStorage) AddToRoom(id, roomId string) {
 }
 
 func (i *inMemStorage) RemoveFromRoom(id, roomId string) {
+	i.lock.Lock()
+	defer i.lock.Unlock()
 	members, ok := i.rooms[roomId]
 	if !ok {
 		return
@@ -43,5 +51,7 @@ func (i *inMemStorage) RemoveFromRoom(id, roomId string) {
 }
 
 func (i *inMemStorage) RoomMembers(roomId string) []string {
+	i.lock.RLock()
+	defer i.lock.RUnlock()
 	return i.rooms[roomId]
 }

@@ -153,13 +153,8 @@ func (p *plexerImpl) Start() {
 			messages := p.config.Relayer.ReceiveBroadcasts()
 			for _, m := range messages {
 				for _, id := range m.RecipientIds {
-					if c, ok := p.connections[id]; ok {
+					if c, ok := p.connections[id]; ok || m.All {
 						c <- m.Message
-					}
-					if id == broadcastAllRecipients {
-						for _, c := range p.connections {
-							c <- m.Message
-						}
 					}
 				}
 			}
@@ -203,7 +198,7 @@ func (p *plexerInternalImpl) SendToRoom(message string, roomId string) {
 
 // send a message to all connections
 func (p *plexerInternalImpl) Broadcast(message string) {
-	p.config.Relayer.Broadcast(RelayMessage{Message: message, RecipientIds: []string{broadcastAllRecipients}})
+	p.config.Relayer.Broadcast(RelayMessage{Message: message, RecipientIds: []string{}, All: true})
 }
 
 func (p *plexerInternalImpl) JoinRoom(roomId string) {
