@@ -1,14 +1,14 @@
 package pandaplex
 
 import (
-	"net"
 	"net/http"
 	"time"
 
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
 	"github.com/gofrs/uuid"
+	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{}
 
 // MessageHandler is the entrypoint for handling messages that come off the socket
 type MessageHandler func(PlexerInternal, string)
@@ -79,7 +79,7 @@ type plexerImpl struct {
 }
 
 type plexerInternalImpl struct {
-	conn    net.Conn
+	conn    *websocket.Conn
 	id      string
 	config  *PlexerConfig
 	headers http.Header
@@ -99,20 +99,21 @@ func NewPlexer(config ...func(*PlexerConfig)) Plexer {
 }
 
 func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	conn, _, _, err := ws.UpgradeHTTP(r, w)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	go func() {
+		defer conn.Close()
 		connId := p.config.IdGenerator(r)
 		writeChan := make(chan string)
 		readChan := make(chan string)
 		p.connections[connId] = writeChan
 		go func() {
 			for {
-				msg, op, err := wsutil.ReadClientData(conn)
-				if op == ws.OpText && err == nil {
+				mt, msg, err := conn.ReadMessage()
+				if mt == websocket.TextMessage && err == nil {
 					readChan <- string(msg)
 				}
 				time.Sleep(time.Millisecond * 10)
@@ -135,7 +136,7 @@ func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				p.config.Handler(pInternal, msg)
 			case msg := <-writeChan:
 				// send outgoing message
-				wsutil.WriteServerText(conn, []byte(msg))
+				conn.WriteMessage(websocket.TextMessage, []byte(msg))
 			}
 			// TODO: handle disconnections
 		}
@@ -182,7 +183,7 @@ func (p *plexerInternalImpl) Cookies() []*http.Cookie {
 
 // send a message back down on the same connection
 func (p *plexerInternalImpl) Reply(message string) {
-	wsutil.WriteServerText(p.conn, []byte(message))
+	p.conn.WriteMessage(websocket.TextMessage, []byte(message))
 }
 
 // send the message to each specified connection id
