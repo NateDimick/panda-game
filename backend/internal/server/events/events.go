@@ -197,6 +197,7 @@ func (gs *GameServer) OnJoinGame(p pandaplex.PlexerConnection, roomId string) er
 	}
 
 	slog.Info("Player joining game room", slog.String("playerId", us.PlayerID), slog.String("room", roomId))
+	// TODO: check if room exists
 	p.JoinRoom(roomId)
 	l := getLobbyState(roomId, gs.Redis)
 	if len(l.Players) < 4 && !l.Started {

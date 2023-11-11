@@ -31,6 +31,8 @@ def demo():
     websocket.send("{\"messageType\": \"blah\", \"message\": \"foobar\"}")
     resp = websocket.recv()
     print(resp)
+    input("press key to end")
+    websocket.close()
     
 
 

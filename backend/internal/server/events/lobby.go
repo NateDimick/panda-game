@@ -7,6 +7,7 @@ type Lobby struct {
 	Players    []*auth.UserSession
 	Spectators []*auth.UserSession
 	Started    bool
+	GameId     string
 }
 
 type UILobby struct {
@@ -14,12 +15,14 @@ type UILobby struct {
 	Players    []string
 	Spectators []string
 	Started    bool
+	GameId     string
 }
 
 func (l *Lobby) RemoveIDs() *UILobby {
 	u := new(UILobby)
 	u.Host = l.Host.Name
 	u.Started = l.Started
+	u.GameId = l.GameId
 	u.Players = make([]string, len(l.Players))
 
 	for i, p := range l.Players {
