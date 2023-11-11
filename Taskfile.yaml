@@ -62,6 +62,14 @@ tasks:
     sources:
       - backend/.build/panda-game-server
       - docker/server.dockerfile
+  bot-docker:
+    desc: build docker image for bot
+    cmds:
+      - docker build -f docker/bot.dockerfile -t panda-game-bot:latest .
+    sources:
+      - bot/bot.py
+      - bot/requirements.txt
+      - docker/bot.dockerfile
   run:
     desc: run the panda game locally
     dir: local
