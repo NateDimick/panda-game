@@ -15,7 +15,7 @@ import (
 
 // TODO this file needs error handling and logging
 
-func getSession(plexer pandaplex.PlexerInternal, r redisconn.RedisConn) (*auth.UserSession, error) {
+func getSession(plexer pandaplex.PlexerConnection, r redisconn.RedisConn) (*auth.UserSession, error) {
 	sessionIndex := slices.IndexFunc(plexer.Cookies(), func(c *http.Cookie) bool { return c.Name == "pandaGameSession" })
 	if sessionIndex == -1 {
 		return nil, errors.New("No pandaGameSession cookie")
@@ -30,7 +30,7 @@ func getSession(plexer pandaplex.PlexerInternal, r redisconn.RedisConn) (*auth.U
 	return us, nil
 }
 
-func broadcastEventToGameRoom[T any](gameID string, eventType ServerEventType, eventBody *T, plexer pandaplex.PlexerInternal) {
+func broadcastEventToGameRoom[T any](gameID string, eventType ServerEventType, eventBody *T, plexer pandaplex.PlexerConnection) {
 	e := &ServerEvent{
 		Type:    eventType,
 		Payload: eventBody,
@@ -57,7 +57,7 @@ func storeGameState(gameID string, game *game.GameState, conn redisconn.RedisCon
 	redisconn.SetThing(gamePfx+gameID, game, conn)
 }
 
-func deferRecover(conn pandaplex.PlexerInternal) {
+func deferRecover(conn pandaplex.PlexerConnection) {
 	if err := recover(); err != nil {
 		slog.Error(fmt.Sprintf("event handler panic: %+v", err))
 		// if conn != nil {

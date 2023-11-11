@@ -64,7 +64,7 @@ type GameServer struct {
 	Mongo mongoconn.CollectionConn
 }
 
-func (g *GameServer) HandleMessage(p pandaplex.PlexerInternal, message string) {
+func (g *GameServer) HandleMessage(p pandaplex.PlexerConnection, message string) {
 	slog.Info("game server got a message", slog.String("message", message))
 
 	event := new(ClientEvent)
@@ -148,7 +148,7 @@ func (g *GameServer) HandleMessage(p pandaplex.PlexerInternal, message string) {
 // 	return nil
 // }
 
-func (gs *GameServer) OnCreateGameLobby(p pandaplex.PlexerInternal) error {
+func (gs *GameServer) OnCreateGameLobby(p pandaplex.PlexerConnection) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {
@@ -189,7 +189,7 @@ func (gs *GameServer) OnCreateGameLobby(p pandaplex.PlexerInternal) error {
 	return nil
 }
 
-func (gs *GameServer) OnJoinGame(p pandaplex.PlexerInternal, roomId string) error {
+func (gs *GameServer) OnJoinGame(p pandaplex.PlexerConnection, roomId string) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {
@@ -211,7 +211,7 @@ func (gs *GameServer) OnJoinGame(p pandaplex.PlexerInternal, roomId string) erro
 	return nil
 }
 
-func (gs *GameServer) OnLeaveGame(p pandaplex.PlexerInternal, roomId string) error {
+func (gs *GameServer) OnLeaveGame(p pandaplex.PlexerConnection, roomId string) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {
@@ -250,7 +250,7 @@ func (gs *GameServer) OnLeaveGame(p pandaplex.PlexerInternal, roomId string) err
 	return nil
 }
 
-func (gs *GameServer) OnChatInRoom(p pandaplex.PlexerInternal, cm game.ChatMessage) error {
+func (gs *GameServer) OnChatInRoom(p pandaplex.PlexerConnection, cm game.ChatMessage) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {
@@ -270,7 +270,7 @@ func (gs *GameServer) OnChatInRoom(p pandaplex.PlexerInternal, cm game.ChatMessa
 	return nil
 }
 
-func (gs *GameServer) OnStartGame(p pandaplex.PlexerInternal, roomId string) error {
+func (gs *GameServer) OnStartGame(p pandaplex.PlexerConnection, roomId string) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {
@@ -337,7 +337,7 @@ func (gs *GameServer) OnStartGame(p pandaplex.PlexerInternal, roomId string) err
 	return nil
 }
 
-func (gs *GameServer) OnTakeTurnAction(p pandaplex.PlexerInternal, pr game.PromptResponse) error {
+func (gs *GameServer) OnTakeTurnAction(p pandaplex.PlexerConnection, pr game.PromptResponse) error {
 	defer deferRecover(p)
 	us, err := getSession(p, gs.Redis)
 	if err != nil {

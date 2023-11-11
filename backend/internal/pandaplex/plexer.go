@@ -1,6 +1,8 @@
 package pandaplex
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -11,9 +13,16 @@ import (
 var upgrader = websocket.Upgrader{}
 
 // MessageHandler is the entrypoint for handling messages that come off the socket
-type MessageHandler func(PlexerInternal, string)
+type MessageHandler func(PlexerConnection, string)
 
-func NoOpHandler(pi PlexerInternal, m string) {
+// handles a disconnect on a connection
+type DisconnectHandler func(PlexerConnection)
+
+func NoOpHandler(pc PlexerConnection, m string) {
+	// this function does nothing
+}
+
+func NoOpDisconnector(pc PlexerConnection) {
 	// this function does nothing
 }
 
@@ -28,6 +37,7 @@ func UUIDGenerator(r *http.Request) string {
 type PlexerConfig struct {
 	MaxConnections int
 	Handler        MessageHandler
+	Disconnector   DisconnectHandler
 	IdGenerator    ConnectionIdGenerator
 	Relayer        PlexerRelayer
 	Storage        PlexerStorage
@@ -38,11 +48,12 @@ var defaultPlexerConfig = PlexerConfig{
 	Relayer:        NewInMemRelayer(),
 	Storage:        NewInMemStorage(),
 	Handler:        NoOpHandler,
+	Disconnector:   NoOpDisconnector,
 	IdGenerator:    UUIDGenerator,
 }
 
 // this interface is provided to MessageHandlers to communicate with other connections
-type PlexerInternal interface {
+type PlexerConnection interface {
 	// get the id of the connection handling this message
 	ID() string
 	// request headers of the connection
@@ -73,7 +84,7 @@ type Plexer interface {
 }
 
 type plexerImpl struct {
-	connections map[string]chan<- string // allows for send messages to active connection
+	connections map[string]chan<- string // allows for send messages to active connection. maybe this value should have a mutex associated with it. keys should be unique though, so... not yet.
 	config      *PlexerConfig
 	started     bool
 }
@@ -90,14 +101,15 @@ type plexerInternalImpl struct {
 func NewPlexer(config ...func(*PlexerConfig)) Plexer {
 	p := new(plexerImpl)
 	p.connections = make(map[string]chan<- string)
-	cfg := &defaultPlexerConfig
+	cfg := defaultPlexerConfig
 	for _, fn := range config {
-		fn(cfg)
+		fn(&cfg)
 	}
-	p.config = cfg
+	p.config = &cfg
 	return p
 }
 
+// connect to server via websocket. Upgrade the connection. Listen on the connection.
 func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -105,20 +117,15 @@ func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	go func() {
-		defer conn.Close()
+		defer func() {
+			conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseGoingAway, ""), time.Now().Add(time.Second))
+			conn.Close()
+		}()
 		connId := p.config.IdGenerator(r)
 		writeChan := make(chan string)
 		readChan := make(chan string)
+		closeCtx, cncl := context.WithCancel(context.Background())
 		p.connections[connId] = writeChan
-		go func() {
-			for {
-				mt, msg, err := conn.ReadMessage()
-				if mt == websocket.TextMessage && err == nil {
-					readChan <- string(msg)
-				}
-				time.Sleep(time.Millisecond * 10)
-			}
-		}()
 
 		pInternal := &plexerInternalImpl{
 			conn:    conn,
@@ -128,19 +135,67 @@ func (p *plexerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			cookies: r.Cookies(),
 		}
 
-		for {
+		go func() {
+			for {
+				select {
+				case <-closeCtx.Done():
+					slog.Info("Connection closed on read loop", slog.String("connId", connId))
+					return
+				default:
+					mt, msg, err := conn.ReadMessage() // this blocks?
+					if mt == websocket.TextMessage && err == nil {
+						readChan <- string(msg)
+					} else if err != nil {
+						slog.Error("Read off connection returned error, must close connection", slog.String("error", err.Error()))
+						slog.Info("Connection closed by client", slog.String("connId", connId))
+						delete(p.connections, connId)
+						cncl()
+						p.panicSafeDisconnect(pInternal)
+						return
+					}
+				}
+			}
+		}()
 
+		for {
 			select {
 			case msg := <-readChan:
 				// handle incoming message
-				p.config.Handler(pInternal, msg)
+				p.panicSafeHandler(pInternal, msg)
 			case msg := <-writeChan:
 				// send outgoing message
-				conn.WriteMessage(websocket.TextMessage, []byte(msg))
+				err := conn.WriteMessage(websocket.TextMessage, []byte(msg))
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					cncl()
+					delete(p.connections, connId)
+					slog.Error("Unexpected close error writing message, closing connection", slog.String("error", err.Error()))
+					p.panicSafeDisconnect(pInternal)
+					return
+				}
+			case <-closeCtx.Done():
+				slog.Info("Connection closed on write loop", slog.String("connId", connId))
+				return
 			}
-			// TODO: handle disconnections
 		}
 	}()
+}
+
+func (p *plexerImpl) panicSafeHandler(internal *plexerInternalImpl, msg string) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error("plexer handler panic", slog.Any("recoverValue", err))
+		}
+	}()
+	p.config.Handler(internal, msg)
+}
+
+func (p *plexerImpl) panicSafeDisconnect(internal *plexerInternalImpl) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error("plexer disconnector panic", slog.Any("recoverValue", err))
+		}
+	}()
+	p.config.Disconnector(internal)
 }
 
 // starts additional plexer functionality in the background
