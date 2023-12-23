@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"slices"
+	"time"
 )
 
 type WeatherType string
@@ -21,25 +22,27 @@ const (
 
 type GameState struct {
 	// what has been placed on the board and where
-	Board *Board
+	Board *Board `json:"board"`
 	// who's playing and what they posess
-	Players []*Player
+	Players []*Player `json:"players"`
 	// info about the current player turn. can be used to re-issue a command to a re-joining player
-	CurrentTurn *Turn
+	CurrentTurn *Turn `json:"-"`
 	// unused plot tiles
-	PlotDeck []DeckPlot
+	PlotDeck []DeckPlot `json:"-"` // TODO: when sent to UI, send height of plot deck, not contents
 	// unused improvements
-	AvailableImprovements ImprovementReserve
+	AvailableImprovements ImprovementReserve `json:"improvementReserve"`
 	// number of irrigations available
-	IrrigationReserve int
+	IrrigationReserve int `json:"irrigationReserve"`
 	// undrawn objectives
-	ObjectiveDecks map[ObjectiveType][]Objective
+	ObjectiveDecks map[ObjectiveType][]Objective `json:"-"`
 	// messages sent by the server to players
-	GameLog []string
+	GameLog []GameMessage `json:"gameLog"`
 	// messages sent by players to the room
-	ChatLog []ChatMessage
+	ChatLog []ChatMessage `json:"chatLog"`
 	// playerID of player who won emperor
-	EmperorWinner string
+	EmperorWinner string `json:"-"`
+	// keeps track of where in the game the turn in
+	TurnCounter *TurnCounter
 }
 
 type DeckPlot struct {
@@ -49,7 +52,6 @@ type DeckPlot struct {
 
 type Turn struct {
 	PlayerID         string
-	Order            int
 	ActionsUsed      []ActionType // the actions the player has already taken
 	CurrentPrompt    Prompt
 	ContextSelection interface{} // for actions that require 2 choices, this is the first choice
@@ -57,9 +59,20 @@ type Turn struct {
 }
 
 type ChatMessage struct {
-	From    string
-	Message string
-	Gid     string
+	From      string    `json:"from"`
+	Message   string    `json:"message"`
+	Gid       string    `json:"gid"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type GameMessage struct {
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type TurnCounter struct {
+	Round    int `json:"round"`
+	Position int `json:"position"`
 }
 
 func NewGame() *GameState {
@@ -94,12 +107,15 @@ func NewGame() *GameState {
 		ObjectiveDecks:        od,
 		AvailableImprovements: ir,
 		PlotDeck:              pd,
-		GameLog:               make([]string, 0),
+		GameLog:               make([]GameMessage, 0),
 		ChatLog:               make([]ChatMessage, 0),
 		CurrentTurn: &Turn{
-			Order:       0,
 			Weather:     NoWeather,
 			ActionsUsed: make([]ActionType, 0),
+		},
+		TurnCounter: &TurnCounter{
+			Round:    1,
+			Position: -1,
 		},
 	}
 	return g
@@ -111,15 +127,18 @@ func (g *GameState) AddPlayers(ps []*Player) {
 		ps[1], ps[j] = ps[j], ps[i]
 	})
 	g.Players = ps
-	g.CurrentTurn.Order = len(ps) - 1 // when NextTurn is called the first time, it will increment up to player 0
 	g.CurrentTurn.PlayerID = ps[0].ID
 }
 
-func (g *GameState) NextTurn() Turn {
-	order := (g.CurrentTurn.Order + 1) % len(g.Players)
+func (g *GameState) NextTurn() {
+	order := (g.TurnCounter.Position + 1) % len(g.Players)
+	if order == len(g.Players) {
+		order = 0
+		g.TurnCounter.Round++
+	}
+	g.TurnCounter.Position = order
 	player := g.Players[order]
-	return Turn{
-		Order:       order,
+	g.CurrentTurn = &Turn{
 		PlayerID:    player.ID,
 		Weather:     NoWeather,
 		ActionsUsed: make([]ActionType, 0),

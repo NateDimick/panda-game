@@ -78,7 +78,7 @@ class PandaGameBot:
                 self.disconnected = True
             case "LobbyUpdate":
                 self.logger.info({"log_reason": "lobby_update", "update": event_data})
-                self.game_id = event_data["Gid"]
+                self.game_id = event_data["gid"]
             case "GameUpdate":
                 self.logger.info({"log_reason": "game_update", "update": event_data})
             case "ActionPrompt":

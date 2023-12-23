@@ -5,21 +5,21 @@ import (
 )
 
 type Player struct {
-	Name string
+	Name string `json:"name"`
 	// a unique identifier for the player
-	ID string
+	ID string `json:"-"`
 	// the player's turn order
-	Order int
+	Order int `json:"-"`
 	// the number of irrigations in reserve
-	Irrigations int
+	Irrigations int `json:"irrigationReserve"`
 	// the player's eaten bamboo reserve (a count of each type)
-	Bamboo BambooReserve
+	Bamboo BambooReserve `json:"bambooReserve"`
 	// the player's improvement reserve (a count of each type)
-	Improvements ImprovementReserve
+	Improvements ImprovementReserve `json:"improvementReserve"`
 	// the objective cards in the player's possession, incomplete
-	Objectives []Objective
+	Objectives []Objective `json:"-"` // TODO: when sending to UI, share number of objectives and types, but not secret info (value, goal)
 	// Objectives in the player's possession that have been completed
-	CompleteObjectives []Objective
+	CompleteObjectives []Objective `json:"completeObjectives"`
 }
 
 type BambooReserve map[PlotType]int

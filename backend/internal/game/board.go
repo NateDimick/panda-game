@@ -9,11 +9,11 @@ import (
 )
 
 type Board struct {
-	PondID           string
-	Plots            map[string]Plot
-	Edges            map[string]Edge
-	PandaLocation    string
-	GardenerLocation string
+	PondID           string          `json:"pondLocation"`
+	Plots            map[string]Plot `json:"plots"`
+	Edges            map[string]Edge `json:"edges"`
+	PandaLocation    string          `json:"pandaLocation"`
+	GardenerLocation string          `json:"gardenerLocation"`
 	plotCount        int
 	edgeCount        int
 }
@@ -62,17 +62,17 @@ type Improvement struct {
 }
 
 type Edge struct {
-	Irrigated bool
-	ID        string
-	Plots     [2]string // ids of the plots this edge is between
+	Irrigated bool      `json:"irrigated"`
+	ID        string    `json:"id"`
+	Plots     [2]string `json:"plots"` // ids of the plots this edge is between
 }
 
 type Plot struct {
-	Type        PlotType
-	Edges       [6]string // ids of all the edges around this plot
-	Improvement Improvement
-	Bamboo      int
-	ID          string
+	Type        PlotType    `json:"type"`
+	Edges       [6]string   `json:"edges"` // ids of all the edges around this plot
+	Improvement Improvement `json:"improvement"`
+	Bamboo      int         `json:"bambooHeight"`
+	ID          string      `json:"id"`
 }
 
 func (b *Board) NextPlotID() string {

@@ -2,6 +2,7 @@ package events
 
 import "pandagame/internal/auth"
 
+// stored in redis
 type Lobby struct {
 	Host       *auth.UserSession
 	Players    []*auth.UserSession
@@ -10,12 +11,13 @@ type Lobby struct {
 	GameId     string
 }
 
+// shared with uis
 type UILobby struct {
-	Host       string
-	Players    []string
-	Spectators []string
-	Started    bool
-	GameId     string
+	Host       string   `json:"host"`
+	Players    []string `json:"players"`
+	Spectators []string `json:"spectators"`
+	Started    bool     `json:"started"`
+	GameId     string   `json:"gid"`
 }
 
 func (l *Lobby) RemoveIDs() *UILobby {

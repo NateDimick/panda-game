@@ -13,6 +13,7 @@ import (
 	"pandagame/internal/util"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -261,6 +262,7 @@ func (gs *GameServer) OnChatInRoom(p pandaplex.PlexerConnection, cm game.ChatMes
 	slog.Info("Player Chat Message", slog.String("playerId", us.PlayerID), slog.String("chat", cm.Message))
 	// get game state from redis
 	cm.From = us.Name
+	cm.Timestamp = time.Now().UTC()
 	g := getGameState(cm.Gid, gs.Redis)
 	// add chat message
 	g.ChatLog = append(g.ChatLog, cm)

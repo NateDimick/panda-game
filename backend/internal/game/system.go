@@ -157,14 +157,25 @@ func GameFlow(g *GameState, p PromptResponse) Prompt {
 		}
 		// complete objectives at the beginning of a player's turn if other player's actions completed for them
 		g.CompleteObjectives()
-		prompt = Prompt{
-			Action:     RollDie,
-			SelectType: RollSelectType,
-			SelectFrom: []interface{}{
-				RollDie,
-			},
-			Time: 10,
-			Pid:  NewPromptID(),
+		// there is no weather on the first round
+		if g.TurnCounter.Round != 1 {
+			prompt = Prompt{
+				Action:     RollDie,
+				SelectType: RollSelectType,
+				SelectFrom: []interface{}{
+					RollDie,
+				},
+				Time: 10,
+				Pid:  NewPromptID(),
+			}
+		} else {
+			prompt = Prompt{
+				Action:     ChooseAction,
+				SelectType: ActionSelectType,
+				SelectFrom: ConvertToInterfaceSlice(g.availableRegularActions()),
+				Time:       60,
+				Pid:        NewPromptID(),
+			}
 		}
 	}
 	g.CurrentTurn.CurrentPrompt = prompt
