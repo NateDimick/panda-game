@@ -62,6 +62,16 @@ tasks:
     sources:
       - backend/.build/panda-game-server
       - docker/server.dockerfile
+  ui-docker:
+    desc: build docker image for game ui
+    cmds:
+      - docker build -f docker/ui.dockerfile -t panda-game-ui:latest .
+    sources:
+      - frontend/src/*
+      - frontend/static/*
+      - frontend/*.json
+      - frontend/*.js
+      - frontend/*.ts
   bot-docker:
     desc: build docker image for bot
     cmds:

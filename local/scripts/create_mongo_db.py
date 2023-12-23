@@ -11,6 +11,10 @@ def setup_mongo():
     for doc in all:
         print(doc)
 
+    collection.insert_one({
+        
+    })
+
 
 if __name__ == "__main__":
     setup_mongo()

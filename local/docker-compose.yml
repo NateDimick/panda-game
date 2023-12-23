@@ -10,6 +10,12 @@ services:
       - MONGO_COLL=panda_users
       - REDIS_ADDR=redis:6379
     restart: always
+  game-ui:
+    image: panda-game-ui:latest
+    ports: 
+      - 3001:3000
+    environment:
+      - PUBLIC_BACKEND_HOSTNAME=http://localhost:3000
   redis:
     image: redis:latest
     ports: 

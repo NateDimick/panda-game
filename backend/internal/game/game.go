@@ -42,7 +42,7 @@ type GameState struct {
 	// playerID of player who won emperor
 	EmperorWinner string `json:"-"`
 	// keeps track of where in the game the turn in
-	TurnCounter *TurnCounter
+	TurnCounter *TurnCounter `json:"turnCounter"`
 }
 
 type DeckPlot struct {
