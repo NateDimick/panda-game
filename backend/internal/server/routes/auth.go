@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"pandagame/internal/auth"
@@ -149,6 +150,41 @@ func (a *AuthAPI) LoginAsGuest(w http.ResponseWriter, r *http.Request) {
 	setSession(w, tempUser, a.redis)
 	w.WriteHeader(http.StatusOK)
 	return
+}
+
+func (a *AuthAPI) Logout(w http.ResponseWriter, r *http.Request) {
+	// get cookie
+	sess, err := r.Cookie("pandaGameSession")
+	if err == http.ErrNoCookie {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// delete session from redis
+	redisconn.DelThing(sessionPfx+sess.Value, a.redis)
+
+	// set cookie to expire 10 seconds ago
+	sess.Expires = time.Now().Add(-time.Minute)
+	http.SetCookie(w, sess)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a *AuthAPI) UserInfo(w http.ResponseWriter, r *http.Request) {
+	sess, err := r.Cookie("pandaGameSession")
+	if err == http.ErrNoCookie {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	session, err := redisconn.GetThing[auth.UserSession](sessionPfx+sess.Value, a.redis)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(session) // TODO: maybe filter this result in the future
+	w.WriteHeader(http.StatusOK)
 }
 
 func setSession(w http.ResponseWriter, record auth.UserRecord, redis redisconn.RedisConn) {

@@ -1,10 +1,11 @@
-all: true
-with-expecter: true
+dir: "{{.InterfaceDir}}"
 inpackage: true
+with-expecter: true
+all: true
 packages:
   pandagame/internal/mongoconn:
     config:
-        recursive: True
+      recursive: true 
   pandagame/internal/redisconn:
     config:
-      recursive: True
+      recursive: true

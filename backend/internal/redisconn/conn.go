@@ -38,3 +38,8 @@ func SetThing[T any](key string, thing *T, conn RedisConn) error {
 	}
 	return nil
 }
+
+func DelThing(key string, conn RedisConn) error {
+	result := conn.Del(context.Background(), key)
+	return result.Err()
+}

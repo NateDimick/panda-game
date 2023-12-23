@@ -41,6 +41,8 @@ func NewServer() *Server {
 	r.Post("/register", a.RegisterUser)
 	r.Post("/login", a.LoginUser)
 	r.Post("/guest", a.LoginAsGuest)
+	r.Post("/logout", a.Logout)
+	r.Get("/userinfo", a.UserInfo)
 	r.Handle("/ws", socketPlexer)
 	server := &Server{r, socketPlexer}
 	socketPlexer.Start()
