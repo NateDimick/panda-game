@@ -40,7 +40,6 @@ func NewServer() *Server {
 	a := routes.NewAuthAPI(mongoconn.NewMongoConn(), redisconn.NewRedisConn())
 	r.Post("/register", a.RegisterUser)
 	r.Post("/login", a.LoginUser)
-	r.Post("/empower", a.EmpowerUser)
 	r.Post("/guest", a.LoginAsGuest)
 	r.Handle("/ws", socketPlexer)
 	server := &Server{r, socketPlexer}
