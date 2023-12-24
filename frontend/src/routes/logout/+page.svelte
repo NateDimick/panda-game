@@ -8,6 +8,7 @@
         console.log("logout - onMount")
         let xrequest = new XMLHttpRequest()
         xrequest.open("POST", `${env.PUBLIC_BACKEND_HOSTNAME}/logout`, false)
+        xrequest.withCredentials = true
         xrequest.send()
         window.location.replace("/")
     })

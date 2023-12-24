@@ -3,21 +3,22 @@ services:
   game-server:
     image: panda-game-server:latest
     labels:
-      - "traefik.http.routers.game-server.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.game-server.rule=Host(`api.panda.game`)"
       - "traefik.http.services.game-server.loadbalancer.server.port=3000"
     environment:
       - MONGO_URI=mongodb://panda:game@mongo:27017
       - MONGO_DB=panda_game
       - MONGO_COLL=panda_users
       - REDIS_ADDR=redis:6379
+      - DOMAIN=.panda.game
     restart: always
   game-ui:
     image: panda-game-ui:latest
     labels:
-      - "traefik.http.routers.game-ui.rule=Host(`ui.localhost`)"
+      - "traefik.http.routers.game-ui.rule=Host(`ui.panda.game`)"
       - "traefik.http.services.game-ui.loadbalancer.server.port=3000"
     environment:
-      - PUBLIC_BACKEND_HOSTNAME=http://api.localhost
+      - PUBLIC_BACKEND_HOSTNAME=http://api.panda.game
   traefik:
     image: traefik:latest
     ports:

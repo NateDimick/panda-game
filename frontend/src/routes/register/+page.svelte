@@ -10,6 +10,7 @@
         let xrequest = new XMLHttpRequest()
         xrequest.open("POST", `${env.PUBLIC_BACKEND_HOSTNAME}/register`, false)
         xrequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+        xrequest.withCredentials = true
         xrequest.send(body)
 
         let status = xrequest.status

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 	"pandagame/internal/auth"
 	"pandagame/internal/mongoconn"
 	"pandagame/internal/redisconn"
@@ -202,8 +203,10 @@ func setSession(w http.ResponseWriter, record auth.UserRecord, redis redisconn.R
 		Value:    userSession.SessionID,
 		Expires:  userSession.ExpireAt,
 		HttpOnly: false,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		Secure:   false,
+		Path:     "/",
+		Domain:   os.Getenv("DOMAIN"),
+		SameSite: http.SameSiteDefaultMode,
 	}
 	http.SetCookie(w, &sessionCookie)
 }
