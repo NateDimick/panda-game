@@ -1,12 +1,14 @@
 <script lang="ts">
-    import Cookies from "js-cookie"
+    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
 
     // this page just removes the cookie and redirect back home
     console.log("logout")
     onMount(() => {
         console.log("logout - onMount")
-        Cookies.remove("pandaGameSession")
+        let xrequest = new XMLHttpRequest()
+        xrequest.open("POST", `${env.PUBLIC_BACKEND_HOSTNAME}/logout`, false)
+        xrequest.send()
         window.location.replace("/")
     })
 </script>

@@ -6,26 +6,26 @@
     let errorMessage: string = ""
 
     function login() {
-        sharedLogin("/login")
+        sharedLogin("login")
     }
 
     function guestLogin() {
-        sharedLogin("/login/guest")
+        sharedLogin("login/guest")
     }
 
     function sharedLogin(path: string) {
-        fetch(`${env.PUBLIC_BACKEND_HOSTNAME}${path}`, {
-            method: "POST",
-            headers: {
+        let rawBasicAuth = `${username}:${password}`
+        let xrequest = new XMLHttpRequest()
+        xrequest.open("POST", `${env.PUBLIC_BACKEND_HOSTNAME}/${path}`, false)
+        xrequest.setRequestHeader("Authorization", `Basic ${btoa(rawBasicAuth)}`)
+        xrequest.send()
 
-            }
-        }).then(resp => {
-            if ( resp.status === 200 ) {
-                window.location.href = "/"
-            } else {
-                errorMessage = resp.statusText
-            }
-        })
+        let status = xrequest.status
+        if ( status === 200 ) {
+            window.location.href = "/"
+        } else {
+            errorMessage = xrequest.statusText
+        }
     }
 
 </script>

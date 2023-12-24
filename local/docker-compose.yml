@@ -2,8 +2,9 @@ version: "3.8"
 services:
   game-server:
     image: panda-game-server:latest
-    ports:
-      - 3000:3000
+    labels:
+      - "traefik.http.routers.game-server.rule=Host(`api.localhost`)"
+      - "traefik.http.services.game-server.loadbalancer.server.port=3000"
     environment:
       - MONGO_URI=mongodb://panda:game@mongo:27017
       - MONGO_DB=panda_game
@@ -12,10 +13,24 @@ services:
     restart: always
   game-ui:
     image: panda-game-ui:latest
-    ports: 
-      - 3001:3000
+    labels:
+      - "traefik.http.routers.game-ui.rule=Host(`ui.localhost`)"
+      - "traefik.http.services.game-ui.loadbalancer.server.port=3000"
     environment:
-      - PUBLIC_BACKEND_HOSTNAME=http://localhost:3000
+      - PUBLIC_BACKEND_HOSTNAME=http://api.localhost
+  traefik:
+    image: traefik:latest
+    ports:
+      - 80:80
+      - 8080:8080
+    command:
+      - --log.level=DEBUG
+      - --api.insecure
+      - --providers.docker
+      #- "--providers.docker.exposedbydefault=false"
+      - --entrypoints.web.address=:80
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
   redis:
     image: redis:latest
     ports: 

@@ -201,8 +201,9 @@ func setSession(w http.ResponseWriter, record auth.UserRecord, redis redisconn.R
 		Name:     "pandaGameSession",
 		Value:    userSession.SessionID,
 		Expires:  userSession.ExpireAt,
-		HttpOnly: true,
+		HttpOnly: false,
 		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 	http.SetCookie(w, &sessionCookie)
 }

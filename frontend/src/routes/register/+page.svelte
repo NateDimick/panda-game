@@ -7,15 +7,19 @@
 
     function register() {
         let body: string = `username=${username}&password=${password}`
-        fetch(`${env.PUBLIC_BACKEND_HOSTNAME}/register`, {method: "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"}, body: body}).then(resp => {
-            if ( resp.status === 201 ) {
-                // redirect to /login
-                window.location.href = "/"
-            } else {
-                // TODO: better error message handling
-                errorMessage = resp.statusText
-            }
-        })
+        let xrequest = new XMLHttpRequest()
+        xrequest.open("POST", `${env.PUBLIC_BACKEND_HOSTNAME}/register`, false)
+        xrequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+        xrequest.send(body)
+
+        let status = xrequest.status
+        if ( status === 201 ) {
+            // redirect to /login
+            window.location.href = "/login"
+        } else {
+            // TODO: better error message handling
+            errorMessage = xrequest.statusText
+        }
     }
 
 </script>

@@ -28,6 +28,7 @@ func NewServer() *Server {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 	r.Use(custommw.RequestLogger)
+	r.Use(custommw.AllowAllOrigins)
 	// socket router
 	gs := events.GameServer{Redis: redisconn.NewRedisConn(), Mongo: mongoconn.NewMongoConn()}
 	plexerSettings := func(c *pandaplex.PlexerConfig) {
