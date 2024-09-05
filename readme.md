@@ -10,12 +10,11 @@ A bamboo gardening game like *Takenoko*
   * custom websocket event protocol with Gorilla Websockets
   * Chi router (lightweight, simple, close to std lib)
   * redis for current games + matchmaking
-  * mongodb for user records
+  * pocketbase
 
 ### Frontend
 
-* Sveltkit
-  * [pixi.js](https://github.com/pixijs/pixijs) game renderer
+* htmx + templ + tailwind (probably) + [pixi.js](https://github.com/pixijs/pixijs)
 
 ## Tools
 

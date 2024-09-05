@@ -252,7 +252,7 @@ func (b *Board) AllFuturePlots() []string {
 func (b *Board) AllImprovablePlots() []string {
 	plotIDs := make([]string, 0)
 	for pid, plot := range b.Plots {
-		if plot.Improvement.Type == NoImprovement && plot.Improvement.Permanent == false && plot.Bamboo == 0 {
+		if plot.Improvement.Type == NoImprovement && !plot.Improvement.Permanent && plot.Bamboo == 0 {
 			plotIDs = append(plotIDs, pid)
 		}
 	}

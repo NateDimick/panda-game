@@ -1,0 +1,37 @@
+package auth
+
+"pandagame/internal/htmx/global"
+
+templ Login(authenticated bool, username string) {
+    <div id="login-shell" hx-ext="response-targets">
+        if authenticated {
+            @LoggedInForm(username)
+        } else {
+            @LoginForm()
+        }
+    </div>
+}
+
+templ LoginForm() {
+    <form hx-post="/hmx/login" hx-target="#login-shell" hx-target-400="#login-error" hx-swap="innerHTML">
+        <label for="login-username">Username</label>
+        <input type="text" name="username" id="login-username"/>
+        <label for="login-password">Password</label>
+        <input type="password" name="password" id="login-password"/>
+        <input type="submit" value="Login"/>
+    </form>
+    <div id="login-error"></div>
+    @global.LinkButton("/signup", "No Account? Sign up here")
+}
+
+templ LoggedInForm(username string) {
+    Logged in as { username }
+    <button type="button" hx-post="/hmx/logout" hx-target="#login-shell" hx-swap="innerHTML">Log Out</button>
+    @global.LinkButton("/", "Return Home")
+}
+
+templ AuthError(msg string) {
+    <p>
+        { message }
+    </p>
+}

@@ -1,8 +1,6 @@
 package game
 
-import (
-	"github.com/gofrs/uuid"
-)
+import "github.com/google/uuid"
 
 type ActionType string
 
@@ -112,7 +110,7 @@ func GetSelection(pt PromptType, s interface{}) interface{} {
 }
 
 func NewPromptID() string {
-	return uuid.Must(uuid.NewV4()).String()
+	return uuid.NewString()
 }
 
 func ConvertToInterfaceSlice[T any](a []T) []interface{} {

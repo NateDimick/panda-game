@@ -198,7 +198,7 @@ func TestProcessPlayerAction(t *testing.T) {
 
 	// for forcing certain die rolls
 	rollResult := 0
-	roll = func(i int) int { return rollResult }
+	roll = func(int) int { return rollResult }
 
 	cases := []struct {
 		Name  string
