@@ -8,8 +8,8 @@ import (
 )
 
 type AuthAPI interface {
-	Create(NewAuthRecord, RecordQuery) (Record, error)
-	PasswordAuth(AuthPasswordBody, RecordQuery) (AuthResponse, error)
+	Create(NewAuthRecord) (Record, error)
+	PasswordAuth(AuthPasswordBody) (AuthResponse, error)
 	RefreshAuth(RecordQuery) (AuthResponse, error)
 }
 
@@ -35,7 +35,7 @@ type AuthResponse struct {
 }
 
 // https://pocketbase.io/docs/api-records/#create-record
-func (a *authClient) Create(record NewAuthRecord, query RecordQuery) (Record, error) {
+func (a *authClient) Create(record NewAuthRecord) (Record, error) {
 
 	plainRecord := NewRecord{
 		Fields: map[string]any{
@@ -44,11 +44,11 @@ func (a *authClient) Create(record NewAuthRecord, query RecordQuery) (Record, er
 			"confirmPassword": record.ConfirmPassword,
 		},
 	}
-	return a.Records(a.collection).Create(plainRecord, query)
+	return a.Records(a.collection).Create(plainRecord, RecordQuery{})
 }
 
 // https://pocketbase.io/docs/api-records/#auth-with-password
-func (a *authClient) PasswordAuth(credentials AuthPasswordBody, query RecordQuery) (AuthResponse, error) {
+func (a *authClient) PasswordAuth(credentials AuthPasswordBody) (AuthResponse, error) {
 	body := bytes.NewBuffer(make([]byte, 0))
 	if err := json.NewEncoder(body).Encode(credentials); err != nil {
 		return AuthResponse{}, err
@@ -59,7 +59,6 @@ func (a *authClient) PasswordAuth(credentials AuthPasswordBody, query RecordQuer
 		return AuthResponse{}, err
 	}
 	req.Header.Add("Content-Type", "application/json")
-	// todo: handle the query part
 	auth, err := handleResponse[AuthResponse](a.config.Client.Do(req))
 	a.setToken(auth)
 	return auth, err

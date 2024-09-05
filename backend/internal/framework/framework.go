@@ -201,38 +201,40 @@ func (f *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f *Framework) handleEvent(e Event) error {
-	responseEvent, err := f.engine.HandleEvent(e)
+	responseEvents, err := f.engine.HandleEvent(e)
 	if err != nil {
 		return err
 	}
-	var msg RelayMessage
-	switch responseEvent.Dest {
-	case TargetClient:
-		msg = RelayMessage{
-			Message:      responseEvent,
-			RecipientIds: []string{responseEvent.DestId},
+	for _, event := range responseEvents {
+		var msg RelayMessage
+		switch event.Dest {
+		case TargetClient:
+			msg = RelayMessage{
+				Message:      event,
+				RecipientIds: []string{event.DestId},
+			}
+		case TargetJoinRoom:
+			f.config.Rooms.AddToRoom(event.SourceId, event.DestId)
+		case TargetLeaveRoom:
+			f.config.Rooms.RemoveFromRoom(event.SourceId, event.DestId)
+		case TargetRoom:
+			msg = RelayMessage{
+				Message:      event,
+				RecipientIds: f.config.Rooms.RoomMembers(event.DestId),
+			}
+		case TargetClientBroadcast:
+			msg = RelayMessage{
+				Message: event,
+				All:     true,
+			}
+		case TargetNone:
+			fallthrough
+		default:
+			continue
 		}
-	case TargetJoinRoom:
-		f.config.Rooms.AddToRoom(responseEvent.SourceId, responseEvent.DestId)
-	case TargetLeaveRoom:
-		f.config.Rooms.RemoveFromRoom(responseEvent.SourceId, responseEvent.DestId)
-	case TargetRoom:
-		msg = RelayMessage{
-			Message:      responseEvent,
-			RecipientIds: f.config.Rooms.RoomMembers(responseEvent.DestId),
+		if len(msg.RecipientIds) > 0 || msg.All {
+			f.config.Relayer.Broadcast(msg)
 		}
-	case TargetClientBroadcast:
-		msg = RelayMessage{
-			Message: responseEvent,
-			All:     true,
-		}
-	case TargetNone:
-		fallthrough
-	default:
-		return nil
-	}
-	if len(msg.RecipientIds) > 0 || msg.All {
-		f.config.Relayer.Broadcast(msg)
 	}
 
 	return nil

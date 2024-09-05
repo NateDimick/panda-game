@@ -10,4 +10,9 @@ Primarily, this means to use Go the Go way.
 
 ### Auth system
 
-Panda Game uses basic auth for player authentication and sessions for player authorization. Player User Records are stored in MongoDB. Sessions are stored primarily in Redis. Sessions also get stored in websocket connections as a context object when a client connects to the websocket.
+Panda Game the following:
+
+* basic auth to login
+* pocketbase for user records, authn and authz
+* stores the pocketbase token in a cookie
+* allows the Authorization header

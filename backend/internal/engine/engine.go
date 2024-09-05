@@ -10,7 +10,10 @@ import (
 	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"pandagame/internal/pocketbase"
+	"pandagame/internal/redisconn"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type ClientEventShell struct {
@@ -113,9 +116,84 @@ func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type PandaGameEngine struct {
+type Lobby struct {
+	Host       string
+	Players    []string
+	Spectators []string
+	Started    bool
+	GameId     string
 }
 
-func (p *PandaGameEngine) HandleEvent(framework.Event) (framework.Event, error) {
-	return framework.Event{}, nil
+type PandaGameEngine struct {
+	PB    pocketbase.PBClient
+	Redis redisconn.RedisConn
+}
+
+func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event, error) {
+	switch ClientEventType(event.Type) {
+	case CreateGame:
+		gameId := uuid.NewString()
+		l := &Lobby{
+			Host:       event.SourceId,
+			Players:    []string{event.SourceId},
+			Spectators: make([]string, 0),
+			GameId:     gameId}
+		response := framework.Event{
+			Source:  framework.TargetServer,
+			Dest:    framework.TargetClient,
+			DestId:  event.SourceId,
+			Type:    string(LobbyUpdate),
+			Payload: l,
+		}
+		// TODO: store lobby (in redis or pocket base?)
+		return []framework.Event{response}, nil
+	case Matchmake:
+		//
+	case CancelMatchmake:
+		//
+	case JoinGame:
+		gameId := event.Payload.(string)
+		// TODO: get lobby from storage
+		// TODO: add user to lobby
+		response := framework.Event{
+			Source:   framework.TargetServer,
+			SourceId: event.SourceId,
+			Dest:     framework.TargetJoinRoom,
+			DestId:   gameId,
+		}
+		// TODO add lobby update broadcast to list
+		return []framework.Event{response}, nil
+	case LeaveGame:
+	case StartGame:
+		// TODO get lobby from storage
+		// TODO apply settings from lobby
+		// g := game.NewGame()
+	case Reprompt:
+		//
+	case GameChat:
+		// TODO get game state
+		g := game.GameState{} // placeholder
+		msg := event.Payload.(game.ChatMessage)
+		g.ChatLog = append(g.ChatLog, msg)
+		// TODO store game state
+		// TODO broadcast game state update
+	case TakeAction:
+		// TODO get game state
+		action := event.Payload.(game.PromptResponse)
+		nextPrompt := game.GameFlow(nil, action)
+		// TODO: broadcast all
+		response := framework.Event{
+			Source:  framework.TargetServer,
+			Dest:    framework.TargetClient,
+			DestId:  nextPrompt.Pid,
+			Type:    string(ActionPrompt),
+			Payload: nextPrompt,
+		}
+		return []framework.Event{response}, nil
+	case ChangeSettings:
+		// TODO will be json, part of lobby
+	default:
+		return make([]framework.Event, 0), fmt.Errorf("invalid message type: %s", event.Type)
+	}
+	return []framework.Event{}, nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type Engine interface {
-	HandleEvent(Event) (Event, error)
+	HandleEvent(Event) ([]Event, error)
 }
 
 type Event struct {
