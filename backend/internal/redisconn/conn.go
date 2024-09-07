@@ -18,13 +18,25 @@ func NewRedisConn() RedisConn {
 	return conn
 }
 
-func GetThing[T any](key string, conn RedisConn) (*T, error) {
+func GetRaw(key string, conn RedisConn) (string, error) {
 	resp := conn.Get(context.Background(), key)
 	if resp.Err() != nil {
-		return nil, resp.Err()
+		return "", resp.Err()
+	}
+	return resp.Val(), nil
+}
+
+func SetRaw(key, value string, conn RedisConn) error {
+	return conn.Set(context.Background(), key, value, time.Hour).Err()
+}
+
+func GetThing[T any](key string, conn RedisConn) (*T, error) {
+	val, err := GetRaw(key, conn)
+	if err != nil {
+		return nil, err
 	}
 
-	return util.FromJSONString[T](resp.Val())
+	return util.FromJSONString[T](val)
 }
 
 func SetThing[T any](key string, thing *T, conn RedisConn) error {
@@ -33,10 +45,7 @@ func SetThing[T any](key string, thing *T, conn RedisConn) error {
 		return err
 	}
 
-	if err := conn.Set(context.Background(), key, s, time.Hour).Err(); err != nil {
-		return err
-	}
-	return nil
+	return SetRaw(key, s, conn)
 }
 
 func DelThing(key string, conn RedisConn) error {
