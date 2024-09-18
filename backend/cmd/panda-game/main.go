@@ -6,15 +6,19 @@ import (
 	"pandagame/internal/config"
 	"pandagame/internal/engine"
 	"pandagame/internal/framework"
+	"pandagame/internal/scaling"
 
 	"github.com/go-chi/chi"
 )
 
 func main() {
 	config.SetLogger()
+	appConfig := config.LoadAppConfig()
 	fw := framework.NewFramework(&engine.PandaGameEngine{})
 	fw.Configure(func(fc *framework.FrameworkConfig) {
 		// TODO
+		fc.Rooms = scaling.Rooms(appConfig)
+		fc.Relayer = scaling.Relayer(appConfig)
 		fc.IdGenerator = engine.IDFromToken
 		fc.Deserializer = engine.MessageDeserializer
 		fc.Serializer = engine.MessageSerializer

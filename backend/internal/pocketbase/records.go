@@ -44,7 +44,7 @@ type Record struct {
 	CollectionName string `json:"collectionName"`
 	UpdatedDT      string `json:"updated"`
 	CreatedDT      string `json:"created"`
-	CustomFields   map[string]any
+	CustomFields   map[string]json.RawMessage
 	Expand         map[string]any `json:"expand"`
 }
 
@@ -57,7 +57,7 @@ type unmarshalingRecord struct {
 }
 
 func (r *Record) UnmarshalJSON(b []byte) error {
-	m := make(map[string]any)
+	m := make(map[string]json.RawMessage)
 	err := json.Unmarshal(b, &m)
 	if err != nil {
 		return err

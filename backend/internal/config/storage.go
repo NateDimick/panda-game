@@ -5,3 +5,7 @@ type PocketBaseConfig struct {
 	AdminIdentity string
 	AdminPassword string
 }
+
+type RedisConfig struct {
+	Address string
+}

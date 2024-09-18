@@ -1,6 +1,7 @@
 package scaling
 
 import (
+	"pandagame/internal/config"
 	"pandagame/internal/framework"
 	"pandagame/internal/redisconn"
 	"slices"
@@ -10,8 +11,8 @@ type redisRooms struct {
 	conn redisconn.RedisConn
 }
 
-func NewRedisRooms(conn redisconn.RedisConn) framework.Rooms {
-	return &redisRooms{conn: conn}
+func NewRedisRooms(cfg config.RedisConfig) framework.Rooms {
+	return &redisRooms{conn: redisconn.NewRedisConn(cfg)}
 }
 
 func (r *redisRooms) AddToRoom(connId string, roomId string) {

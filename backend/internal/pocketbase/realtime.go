@@ -17,7 +17,7 @@ type RealtimeAPI interface {
 
 type RealtimeEvent struct {
 	Event    string
-	Data     string
+	Data     map[string]any
 	Error    bool
 	Comments []string
 }
@@ -36,7 +36,8 @@ func ParseEventStream(message string) RealtimeEvent {
 			event.Comments = append(event.Comments, message)
 		}
 	}
-	event.Data = strings.Join(data, "\n")
+	event.Data = make(map[string]any)
+	json.NewDecoder(strings.NewReader(strings.Join(data, "\n"))).Decode(&event.Data)
 	return event
 }
 
@@ -95,7 +96,7 @@ func (t *tokenHolder) Connect(handler func(RealtimeEvent)) error {
 				handler(ParseEventStream(t))
 			}
 			if err := scanner.Err(); err != nil {
-				handler(RealtimeEvent{Event: "Scanner-Error", Data: err.Error(), Error: true})
+				handler(RealtimeEvent{Event: "Scanner-Error", Data: map[string]any{"error": err.Error()}, Error: true})
 				return
 			}
 			time.Sleep(time.Millisecond * 100)

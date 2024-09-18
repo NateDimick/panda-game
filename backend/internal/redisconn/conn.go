@@ -2,16 +2,16 @@ package redisconn
 
 import (
 	"context"
-	"os"
+	"pandagame/internal/config"
 	"pandagame/internal/util"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedisConn() RedisConn {
+func NewRedisConn(cfg config.RedisConfig) RedisConn {
 	conn := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_ADDR"),
+		Addr: cfg.Address,
 		DB:   0,
 	})
 

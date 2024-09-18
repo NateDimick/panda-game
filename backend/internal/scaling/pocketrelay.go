@@ -36,13 +36,20 @@ func NewPocketBaseRelay(cfg config.PocketBaseConfig) framework.Relayer {
 	pbr.pb.AsAdmin().Realtime().Connect(func(re pocketbase.RealtimeEvent) {
 		if re.Event == "PB_CONNECT" {
 			pbr.pb.AsAdmin().Realtime().SetSubscriptions(pocketbase.Subscription{
-				ClientID:      "todo - from data",
+				ClientID:      re.Data["clientId"].(string),
 				Subscriptions: []string{"events"},
 			})
+			return
 		}
 		// get record id from re.data.record
+		// recordId := re.Data["record"].(string)
 		// get the record
+		// record, err := pbr.pb.AsAdmin().Records("events").View(recordId, pocketbase.RecordQuery{})
+		// if err != nil {
+		// 	return
+		// }
 		// get the relay message from record.event
+		//record.CustomFields["event"]
 		// put relay message in the events structure
 	})
 
