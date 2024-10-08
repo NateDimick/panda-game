@@ -1,6 +1,6 @@
 # Panda Game
 
-A bamboo gardening game like *Takenoko*
+A bamboo gardening game like *Takenoko*, in your browser! That's the goal.
 
 ## Technical overview
 
@@ -9,12 +9,12 @@ A bamboo gardening game like *Takenoko*
 * Golang
   * custom websocket event protocol with Gorilla Websockets
   * Chi router (lightweight, simple, close to std lib)
-  * redis for current games + matchmaking
-  * pocketbase
+  * nats for event pub/sub, and kv
+  * pocketbase for auth, record storage
 
 ### Frontend
 
-* htmx + templ + tailwind (probably) + [pixi.js](https://github.com/pixijs/pixijs)
+* htmx + templ + tailwind (probably) + [pixi.js](https://github.com/pixijs/pixijs) (probably)
 
 ## Tools
 
