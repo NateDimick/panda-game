@@ -2,44 +2,26 @@ version: "3.8"
 services:
   game-server:
     image: panda-game-server:latest
-    labels:
-      - "traefik.http.routers.game-server.rule=Host(`api.panda.game`)"
-      - "traefik.http.services.game-server.loadbalancer.server.port=3000"
     environment:
-      - MONGO_URI=mongodb://panda:game@mongo:27017
-      - MONGO_DB=panda_game
-      - MONGO_COLL=panda_users
-      - REDIS_ADDR=redis:6379
-      - DOMAIN=.panda.game
+      - PB_ADDR=http://pocketbase:8080
+      - PB_ADMIN=admin@panda-game.com
+      - PB_ADMIN_PASS=strongpassword
+      - NATS_ADDR=nats://nats:4222
+      - NATS_RELAY_SUBJECT=events
+      - NATS_GROUPS_BUCKET=groups
+      - SCALE=COLOCATED
     restart: always
-  game-ui:
-    image: panda-game-ui:latest
-    labels:
-      - "traefik.http.routers.game-ui.rule=Host(`ui.panda.game`)"
-      - "traefik.http.services.game-ui.loadbalancer.server.port=3000"
-    environment:
-      - PUBLIC_BACKEND_HOSTNAME=http://api.panda.game
-  traefik:
-    image: traefik:latest
+  nats:
+    image: nats:latest
+    container_name: nats
     ports:
-      - 80:80
+      - 4222:4222
+      - 6222:6222
+      - 8222:8222
+    command: "--js"
+  pocketbase:
+    build: 
+      dockerfile: ./pocketbase.Dockerfile
+    container_name: pocketbase
+    ports:
       - 8080:8080
-    command:
-      - --log.level=DEBUG
-      - --api.insecure
-      - --providers.docker
-      #- "--providers.docker.exposedbydefault=false"
-      - --entrypoints.web.address=:80
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  redis:
-    image: redis:latest
-    ports: 
-      - 6379:6379
-  mongo:
-    image: mongo:latest
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=panda
-      - MONGO_INITDB_ROOT_PASSWORD=game
-    ports:
-      - 27017:27017

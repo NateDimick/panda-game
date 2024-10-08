@@ -125,9 +125,3 @@ func handleResponse[T any](resp *http.Response, err error) (T, error) {
 	}
 	return *data, err
 }
-
-type noResponse struct{}
-
-func (*noResponse) UnmarshalJSON([]byte) error {
-	return nil
-}
