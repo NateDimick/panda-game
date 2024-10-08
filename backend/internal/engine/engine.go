@@ -10,7 +10,6 @@ import (
 	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"pandagame/internal/pocketbase"
-	"pandagame/internal/redisconn"
 	"strings"
 
 	"github.com/google/uuid"
@@ -125,8 +124,7 @@ type Lobby struct {
 }
 
 type PandaGameEngine struct {
-	PB    pocketbase.PBClient
-	Redis redisconn.RedisConn
+	PB pocketbase.PBClient
 }
 
 func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event, error) {
@@ -158,7 +156,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 		response := framework.Event{
 			Source:   framework.TargetServer,
 			SourceId: event.SourceId,
-			Dest:     framework.TargetJoinRoom,
+			Dest:     framework.TargetJoinGroup,
 			DestId:   gameId,
 		}
 		// TODO add lobby update broadcast to list

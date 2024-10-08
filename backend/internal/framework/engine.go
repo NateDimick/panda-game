@@ -3,6 +3,7 @@ package framework
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type Engine interface {
@@ -10,23 +11,39 @@ type Engine interface {
 }
 
 type Event struct {
-	Source   EventTarget
-	SourceId string // a client id when the source
-	Dest     EventTarget
-	DestId   string // either client id or room id, depends on Dest
-	Type     string
-	Payload  any
-	Metadata map[string]any
+	Source   EventTarget    `json:"source"`
+	SourceId string         `json:"sourceId"` // a client id when the source
+	Dest     EventTarget    `json:"eventTarget"`
+	DestId   string         `json:"destinationId"` // either client id or Groupid, depends on Dest
+	Type     string         `json:"type"`
+	Payload  any            `json:"payload"`
+	Metadata map[string]any `json:"metadata"`
 }
 
 type EventTarget int
 
+func (e *EventTarget) MarshalJSON() ([]byte, error) {
+	i := int(*e)
+	s := strconv.Itoa(i)
+	return []byte(s), nil
+}
+
+func (e *EventTarget) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+	*e = EventTarget(i)
+	return nil
+}
+
 const (
 	TargetServer          EventTarget = iota // Source: when from a server broadcast, Dest: when from a client
 	TargetClient                             // Source: when from a client, Dest: when to send back to client
-	TargetJoinRoom                           // Source: never, Dest: when the event should result in a user joining a room (produced by engine)
-	TargetLeaveRoom                          // Source: never, Dest: when the event should result in a user leaving a room (produced by engine)
-	TargetRoom                               // Source: never, Dest: when the event should be sent to a room
+	TargetJoinGroup                          // Source: never, Dest: when the event should result in a user joining a Group(produced by engine)
+	TargetLeaveGroup                         // Source: never, Dest: when the event should result in a user leaving a Group(produced by engine)
+	TargetGroup                              // Source: never, Dest: when the event should be sent to a room
 	TargetServerBroadcast                    // Source: never, Dest: when the message should be relayed to other servers
 	TargetClientBroadcast                    // Source: never, Dest: when the message should be relayed to other clients (including clients on other servers)
 	TargetNone                               // Source: never, Dest: when the event should be dropped

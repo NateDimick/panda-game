@@ -6,6 +6,3 @@ packages:
   pandagame/internal/mongoconn:
     config:
       recursive: true 
-  pandagame/internal/redisconn:
-    config:
-      recursive: true

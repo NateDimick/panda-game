@@ -6,6 +6,8 @@ type PocketBaseConfig struct {
 	AdminPassword string
 }
 
-type RedisConfig struct {
-	Address string
+type NatsConfig struct {
+	Address      string
+	RelaySubject string
+	GroupBucket  string
 }

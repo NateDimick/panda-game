@@ -18,7 +18,7 @@ type FrameworkConfig struct {
 	DisconnectHandler DisconnectHandler
 	IdGenerator       IdGenerator
 	Relayer           Relayer
-	Rooms             Rooms
+	Groups            Grouper
 	RelayInterval     time.Duration
 }
 
@@ -35,7 +35,7 @@ func NewFramework(engine Engine) *Framework {
 			DisconnectHandler: defaultDisconnectHandler,
 			IdGenerator:       defaultIdGenerator,
 			Relayer:           NewInMemRelayer(),
-			Rooms:             NewInMemStorage(),
+			Groups:            NewInMemStorage(),
 			RelayInterval:     time.Millisecond * 100,
 		},
 		connections: make(map[string]chan Event),
@@ -213,14 +213,14 @@ func (f *Framework) handleEvent(e Event) error {
 				Message:      event,
 				RecipientIds: []string{event.DestId},
 			}
-		case TargetJoinRoom:
-			f.config.Rooms.AddToRoom(event.SourceId, event.DestId)
-		case TargetLeaveRoom:
-			f.config.Rooms.RemoveFromRoom(event.SourceId, event.DestId)
-		case TargetRoom:
+		case TargetJoinGroup:
+			f.config.Groups.AddToGroup(event.SourceId, event.DestId)
+		case TargetLeaveGroup:
+			f.config.Groups.RemoveFromGroup(event.SourceId, event.DestId)
+		case TargetGroup:
 			msg = RelayMessage{
 				Message:      event,
-				RecipientIds: f.config.Rooms.RoomMembers(event.DestId),
+				RecipientIds: f.config.Groups.GroupMembers(event.DestId),
 			}
 		case TargetClientBroadcast:
 			msg = RelayMessage{

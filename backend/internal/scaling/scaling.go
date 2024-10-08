@@ -5,12 +5,12 @@ import (
 	"pandagame/internal/framework"
 )
 
-func Rooms(cfg config.AppConfig) framework.Rooms {
+func Grouper(cfg config.AppConfig) framework.Grouper {
 	switch cfg.Scale {
 	case config.Singleton:
 		return framework.NewInMemStorage()
 	case config.Colocated:
-		return NewRedisRooms(cfg.Redis)
+		return NewNatsKV(cfg.Nats.Address, cfg.Nats.GroupBucket)
 	case config.Distributed:
 		panic("distributed is not possible yet")
 	default:
@@ -23,7 +23,7 @@ func Relayer(cfg config.AppConfig) framework.Relayer {
 	case config.Singleton:
 		return framework.NewInMemRelayer()
 	case config.Colocated:
-		return NewPocketBaseRelay(cfg.PB)
+		return NewNatsRelay(cfg.Nats.Address, cfg.Nats.RelaySubject) // TODO
 	case config.Distributed:
 		panic("distributed is not possible yet")
 	default:

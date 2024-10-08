@@ -68,7 +68,6 @@ type AdminAPI interface {
 	Collections(string) CollectionsAPI
 	Admins() AdminsAPI
 	Records(string) RecordsAPI
-	Realtime() RealtimeAPI
 	// Backups
 	// Settings
 	// Logs
@@ -77,7 +76,6 @@ type AdminAPI interface {
 type API interface {
 	Records(string) RecordsAPI
 	Auth(string) AuthAPI
-	Realtime() RealtimeAPI
 	// Files
 	// Health
 }
@@ -88,10 +86,6 @@ type tokenHolder struct {
 }
 
 func (t *tokenHolder) Admins() AdminsAPI {
-	return t
-}
-
-func (t *tokenHolder) Realtime() RealtimeAPI {
 	return t
 }
 

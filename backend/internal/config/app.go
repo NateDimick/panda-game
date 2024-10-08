@@ -4,7 +4,7 @@ import "os"
 
 type AppConfig struct {
 	PB    PocketBaseConfig
-	Redis RedisConfig
+	Nats  NatsConfig
 	Scale ScalingLevel
 }
 
@@ -23,10 +23,12 @@ func LoadAppConfig() AppConfig {
 		return *globalConfig
 	}
 	globalConfig = new(AppConfig)
-	globalConfig.Redis.Address = os.Getenv("REDIS_ADDR")
 	globalConfig.PB.Address = os.Getenv("PB_ADDR")
 	globalConfig.PB.AdminIdentity = os.Getenv("PB_ADMIN")
 	globalConfig.PB.AdminPassword = os.Getenv("PB_ADMIN_PASS")
+	globalConfig.Nats.Address = os.Getenv("NATS_ADDR")
+	globalConfig.Nats.RelaySubject = os.Getenv("NATS_RELAY_SUBJECT")
+	globalConfig.Nats.GroupBucket = os.Getenv("NATS_GROUP_BUCKET")
 	globalConfig.Scale = loadScaleLevel()
 
 	return *globalConfig

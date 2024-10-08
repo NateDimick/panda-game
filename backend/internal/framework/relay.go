@@ -10,9 +10,9 @@ type Relayer interface {
 }
 
 type RelayMessage struct {
-	Message      Event
-	RecipientIds []string
-	All          bool
+	Message      Event    `json:"message"`
+	RecipientIds []string `json:"recipientIds"`
+	All          bool     `json:"all"`
 }
 
 type inMemRelayer struct {

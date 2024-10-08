@@ -17,7 +17,7 @@ func main() {
 	fw := framework.NewFramework(&engine.PandaGameEngine{})
 	fw.Configure(func(fc *framework.FrameworkConfig) {
 		// TODO
-		fc.Rooms = scaling.Rooms(appConfig)
+		fc.Groups = scaling.Grouper(appConfig)
 		fc.Relayer = scaling.Relayer(appConfig)
 		fc.IdGenerator = engine.IDFromToken
 		fc.Deserializer = engine.MessageDeserializer
