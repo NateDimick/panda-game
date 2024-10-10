@@ -10,13 +10,18 @@ import (
 type AdminsAPI interface {
 	PasswordAuth(AdminPasswordBody) (AdminAuthResponse, error)
 	RefreshAuth() (AdminAuthResponse, error)
-	CreateAdmin(AdminPasswordBody) error
+	CreateAdmin(NewAdminBody) error
+}
+
+type NewAdminBody struct {
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"passwordConfirm,omitempty"` // only needed for creating admins
 }
 
 type AdminPasswordBody struct {
-	Identity        string `json:"identity"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"passwordConfirm,omitempty"` // only needed for creating admins
+	Identity string `json:"identity"`
+	Password string `json:"password"`
 }
 
 type AdminAuthResponse struct {
@@ -61,7 +66,7 @@ func (t *tokenHolder) setToken(auth AdminAuthResponse) {
 }
 
 // https://pocketbase.io/docs/api-admins/#create-admin
-func (t *tokenHolder) CreateAdmin(credentials AdminPasswordBody) error {
+func (t *tokenHolder) CreateAdmin(credentials NewAdminBody) error {
 	credentials.ConfirmPassword = credentials.Password
 	body := bytes.NewBuffer(make([]byte, 0))
 	if err := json.NewEncoder(body).Encode(credentials); err != nil {

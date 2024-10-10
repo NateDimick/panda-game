@@ -12,7 +12,7 @@ import (
 )
 
 func TestSetLogger(t *testing.T) {
-	SetLogger()
+	SetLogger("")
 	slog.Info("unit test message", slog.String("extraValue", "hello"))
 	f, err := os.Open("panda-server.log")
 	assert.Nil(t, err)
@@ -28,7 +28,7 @@ func TestSetLogger(t *testing.T) {
 }
 
 func TestTeeHandler(t *testing.T) {
-	SetLogger()
+	SetLogger("")
 	slog.Default().WithGroup("groupOne").Info("the bees!", slog.String("valueOne", "bees"))
 	slog.With(slog.String("attrOne", "knees")).Info("the knees!")
 

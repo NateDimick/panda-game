@@ -12,11 +12,8 @@ import (
 )
 
 func main() {
-	config.SetLogger()
+	config.SetLogger("panda-server.log")
 	appConfig := config.LoadAppConfig()
-	if err := config.CreatePBAdmin(appConfig.PB); err != nil {
-		panic(err.Error())
-	}
 	fw := framework.NewFramework(&engine.PandaGameEngine{})
 	fw.Configure(func(fc *framework.FrameworkConfig) {
 		// TODO

@@ -7,16 +7,22 @@ import (
 	"os"
 )
 
-func SetLogger() {
+func SetLogger(filename string) {
 	options := slog.HandlerOptions{
 		AddSource: true,
 		Level:     slog.LevelDebug,
 	}
 	stdoutLogger := slog.NewJSONHandler(os.Stdout, &options)
-	fileLogger := slog.NewJSONHandler(new(LogWriter), &options)
-	handler := &TeeHandler{
-		stdout: stdoutLogger,
-		file:   fileLogger,
+	var handler slog.Handler
+	if filename != "" {
+		lw := &LogWriter{filename: filename}
+		fileLogger := slog.NewJSONHandler(lw, &options)
+		handler = &TeeHandler{
+			stdout: stdoutLogger,
+			file:   fileLogger,
+		}
+	} else {
+		handler = stdoutLogger
 	}
 
 	logger := slog.New(handler)
@@ -54,11 +60,13 @@ func (t *TeeHandler) WithGroup(name string) slog.Handler {
 	return t2
 }
 
-type LogWriter struct{}
+type LogWriter struct {
+	filename string
+}
 
 func (l *LogWriter) Write(b []byte) (int, error) {
 	var f *os.File
-	f, err := os.OpenFile("panda-server.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	f, err := os.OpenFile(l.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return 0, err
 	}

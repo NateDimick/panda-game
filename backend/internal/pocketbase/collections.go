@@ -9,34 +9,37 @@ import (
 )
 
 type CollectionsAPI interface {
-	View(CollectionQuery) (CollectionResponse, error)
+	View(string, CollectionQuery) (CollectionResponse, error)
 	Create(any, CollectionQuery) (CollectionResponse, error)
-}
-
-type collectionsClient struct {
-	*tokenHolder
-	collection string
 }
 
 type CollectionQuery struct {
 	Fields []string
 }
 
-type collection struct {
-	ID         string           `json:"id,omitempty"`
-	Name       string           `json:"name"`
-	Type       string           `json:"type"`
-	Schema     []map[string]any `json:"schema"`
-	ListRule   string           `json:"listRule,omitempty"`
-	ViewRule   string           `json:"viewRule,omitempty"`
-	CreateRule string           `json:"createRule,omitempty"`
-	UpdateRule string           `json:"updateRule,omitempty"`
-	DeleteRule string           `json:"deleteRule,omitempty"`
-	Indexes    []string         `json:"indexes,omitempty"`
+type SchemaItem struct {
+	Name     string         `json:"name"`
+	Type     string         `json:"type"`
+	System   *bool          `json:"system"`
+	Required *bool          `json:"required,omitempty"`
+	Options  map[string]any `json:"options"`
+}
+
+type Collection struct {
+	ID         string       `json:"id,omitempty"`
+	Name       string       `json:"name"`
+	Type       string       `json:"type"`
+	Schema     []SchemaItem `json:"schema"`
+	ListRule   string       `json:"listRule,omitempty"`
+	ViewRule   string       `json:"viewRule,omitempty"`
+	CreateRule string       `json:"createRule,omitempty"`
+	UpdateRule string       `json:"updateRule,omitempty"`
+	DeleteRule string       `json:"deleteRule,omitempty"`
+	Indexes    []string     `json:"indexes,omitempty"`
 }
 
 type NewBaseCollection struct {
-	collection
+	Collection
 	System bool `json:"system,omitempty"`
 }
 
@@ -59,26 +62,25 @@ type NewAuthCollection struct {
 }
 
 type CollectionResponse struct {
-	collection
+	Collection
 	Options map[string]any `json:"options"`
 }
 
 // https://pocketbase.io/docs/api-collections/#view-collection
-func (c *collectionsClient) View(query CollectionQuery) (CollectionResponse, error) {
-	url := fmt.Sprintf("%s/api/collections/%s", c.config.Addr, c.collection)
+func (t *tokenHolder) View(collection string, query CollectionQuery) (CollectionResponse, error) {
+	url := fmt.Sprintf("%s/api/collections/%s", t.config.Addr, collection)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return CollectionResponse{}, err
 	}
-	req.Header.Add("Authorization", c.token)
-	return handleResponse[CollectionResponse](c.config.Client.Do(req))
+	req.Header.Add("Authorization", t.token)
+	return handleResponse[CollectionResponse](t.config.Client.Do(req))
 }
 
 // https://pocketbase.io/docs/api-collections/#create-collection
-func (c *collectionsClient) Create(col any, query CollectionQuery) (CollectionResponse, error) {
+func (t *tokenHolder) Create(col any, query CollectionQuery) (CollectionResponse, error) {
 	switch col.(type) {
 	case NewBaseCollection, NewAuthCollection, NewViewCollection:
-		// allow them through
 	default:
 		return CollectionResponse{}, errors.New("NewCollection is not of the right type")
 	}
@@ -86,10 +88,11 @@ func (c *collectionsClient) Create(col any, query CollectionQuery) (CollectionRe
 	if err := json.NewEncoder(body).Encode(&col); err != nil {
 		return CollectionResponse{}, err
 	}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/collections", c.config.Addr), body)
-	req.Header.Add("Authorization", c.token)
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/collections", t.config.Addr), body)
+	req.Header.Add("Authorization", t.token)
+	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return CollectionResponse{}, err
 	}
-	return handleResponse[CollectionResponse](c.config.Client.Do(req))
+	return handleResponse[CollectionResponse](t.config.Client.Do(req))
 }

@@ -55,6 +55,11 @@ tasks:
     cmds:
       - covreport -i .build/cover_clean.out -o .build/cover.html
       - open .build/cover.html
+  update-base-images:
+    desc: pull latest base docker images
+    cmds:
+      - docker pull golang:alpine
+      - docker pull alpine
   server-docker:
     desc: build docker image for game server
     cmds:
@@ -62,6 +67,19 @@ tasks:
     sources:
       - backend/**/*.go
       - docker/server.dockerfile
+  init-docker:
+    desc: build init tool image
+    cmds: 
+      - docker build -f docker/init.dockerfile -t panda-game-init:latest .
+    sources:
+      - backend/**/*.go
+      - docker/init.dockerfile
+  pb-docker:
+    desc: build pocketbase image
+    cmds:
+      - docker build -f docker/pocketbase.dockerfile -t panda-game-pocketbase:latest .
+    sources:
+      - docker/pocketbase.dockerfile
   bot-docker:
     desc: build docker image for bot
     cmds:

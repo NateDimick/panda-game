@@ -65,7 +65,7 @@ func (p *PBClient) WithToken(token string) *PBClient {
 }
 
 type AdminAPI interface {
-	Collections(string) CollectionsAPI
+	Collections() CollectionsAPI
 	Admins() AdminsAPI
 	Records(string) RecordsAPI
 	// Backups
@@ -89,11 +89,8 @@ func (t *tokenHolder) Admins() AdminsAPI {
 	return t
 }
 
-func (t *tokenHolder) Collections(collection string) CollectionsAPI {
-	return &collectionsClient{
-		tokenHolder: t,
-		collection:  collection,
-	}
+func (t *tokenHolder) Collections() CollectionsAPI {
+	return t
 }
 
 func (t *tokenHolder) Records(collection string) RecordsAPI {
