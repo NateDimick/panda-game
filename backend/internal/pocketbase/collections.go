@@ -10,33 +10,35 @@ import (
 
 type CollectionsAPI interface {
 	View(string, CollectionQuery) (CollectionResponse, error)
-	Create(any, CollectionQuery) (CollectionResponse, error)
+	Create(NewCollection, CollectionQuery) (CollectionResponse, error)
 }
 
 type CollectionQuery struct {
 	Fields []string
 }
 
-type SchemaItem struct {
-	Name     string         `json:"name"`
-	Type     string         `json:"type"`
-	System   *bool          `json:"system"`
-	Required *bool          `json:"required,omitempty"`
-	Options  map[string]any `json:"options"`
+type NewCollection interface {
+	C()
+}
+
+type Schema interface {
+	S()
 }
 
 type Collection struct {
-	ID         string       `json:"id,omitempty"`
-	Name       string       `json:"name"`
-	Type       string       `json:"type"`
-	Schema     []SchemaItem `json:"schema"`
-	ListRule   string       `json:"listRule,omitempty"`
-	ViewRule   string       `json:"viewRule,omitempty"`
-	CreateRule string       `json:"createRule,omitempty"`
-	UpdateRule string       `json:"updateRule,omitempty"`
-	DeleteRule string       `json:"deleteRule,omitempty"`
-	Indexes    []string     `json:"indexes,omitempty"`
+	ID         string   `json:"id,omitempty"`
+	Name       string   `json:"name"`
+	Type       string   `json:"type"`
+	Schema     []Schema `json:"schema"`
+	ListRule   string   `json:"listRule,omitempty"`
+	ViewRule   string   `json:"viewRule,omitempty"`
+	CreateRule string   `json:"createRule,omitempty"`
+	UpdateRule string   `json:"updateRule,omitempty"`
+	DeleteRule string   `json:"deleteRule,omitempty"`
+	Indexes    []string `json:"indexes,omitempty"`
 }
+
+func (c Collection) C() {}
 
 type NewBaseCollection struct {
 	Collection
@@ -78,7 +80,7 @@ func (t *tokenHolder) View(collection string, query CollectionQuery) (Collection
 }
 
 // https://pocketbase.io/docs/api-collections/#create-collection
-func (t *tokenHolder) Create(col any, query CollectionQuery) (CollectionResponse, error) {
+func (t *tokenHolder) Create(col NewCollection, query CollectionQuery) (CollectionResponse, error) {
 	switch col.(type) {
 	case NewBaseCollection, NewAuthCollection, NewViewCollection:
 	default:

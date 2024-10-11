@@ -59,6 +59,9 @@ func main() {
 			Collection: pocketbase.Collection{
 				Name: "players",
 				Type: "auth",
+				Schema: []pocketbase.Schema{
+					pocketbase.SchemaBuilder("name", pocketbase.TextOptions{MaxLen: 18}),
+				},
 			},
 			System: true,
 		},
@@ -83,18 +86,9 @@ func main() {
 		Collection: pocketbase.Collection{
 			Name: "games",
 			Type: "base",
-			Schema: []pocketbase.SchemaItem{
-				{
-					Name: "gameId",
-					Type: "text",
-				},
-				{
-					Name: "state",
-					Type: "json",
-					Options: map[string]any{
-						"maxSize": 20000,
-					},
-				},
+			Schema: []pocketbase.Schema{
+				pocketbase.SchemaBuilder("gameId", pocketbase.TextOptions{}),
+				pocketbase.SchemaBuilder("state", pocketbase.JSONOptions{MaxSize: 20000}),
 			},
 		},
 		System: *pBool(true),
