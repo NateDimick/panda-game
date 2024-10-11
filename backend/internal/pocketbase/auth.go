@@ -8,7 +8,7 @@ import (
 )
 
 type AuthAPI interface {
-	Create(NewAuthRecord) (Record, error)
+	Create(NewAuthRecord, any) (Record, error)
 	PasswordAuth(AuthPasswordBody) (AuthResponse, error)
 	RefreshAuth(RecordQuery) (AuthResponse, error)
 }
@@ -35,7 +35,7 @@ type AuthResponse struct {
 }
 
 // https://pocketbase.io/docs/api-records/#create-record
-func (a *authClient) Create(record NewAuthRecord) (Record, error) {
+func (a *authClient) Create(record NewAuthRecord, out any) (Record, error) {
 
 	plainRecord := NewRecord{
 		Fields: map[string]any{
@@ -44,7 +44,7 @@ func (a *authClient) Create(record NewAuthRecord) (Record, error) {
 			"confirmPassword": record.ConfirmPassword,
 		},
 	}
-	return a.Records(a.collection).Create(plainRecord, RecordQuery{})
+	return a.Records(a.collection).Create(plainRecord, out, RecordQuery{})
 }
 
 // https://pocketbase.io/docs/api-records/#auth-with-password
