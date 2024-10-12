@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func SetLogger(filename string) {
@@ -15,7 +17,7 @@ func SetLogger(filename string) {
 	stdoutLogger := slog.NewJSONHandler(os.Stdout, &options)
 	var handler slog.Handler
 	if filename != "" {
-		lw := &LogWriter{filename: filename}
+		lw := NewLogWriter(filename)
 		fileLogger := slog.NewJSONHandler(lw, &options)
 		handler = &TeeHandler{
 			stdout: stdoutLogger,
@@ -61,15 +63,19 @@ func (t *TeeHandler) WithGroup(name string) slog.Handler {
 }
 
 type LogWriter struct {
-	filename string
+	logger *lumberjack.Logger
+}
+
+func NewLogWriter(filename string) *LogWriter {
+	return &LogWriter{
+		logger: &lumberjack.Logger{
+			MaxSize:  100,
+			Filename: filename,
+			Compress: true,
+		},
+	}
 }
 
 func (l *LogWriter) Write(b []byte) (int, error) {
-	var f *os.File
-	f, err := os.OpenFile(l.filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return 0, err
-	}
-	defer f.Close()
-	return f.Write(b)
+	return l.logger.Write(b)
 }
