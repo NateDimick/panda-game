@@ -1,6 +1,7 @@
 package pocketbase
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -33,4 +34,19 @@ func TestRecordUnmarshalingStruct(t *testing.T) {
 	assert.Equal(t, "five", record.CollectionId) // fields with multiple keys end up in the right place
 	e := record.CustomFields.(*Example)
 	assert.Equal(t, "foobar", e.CA) // custom fields contains additional data
+}
+
+func TestNewRecordMarshal(t *testing.T) {
+	r := NewRecord{
+		ID: "my-id",
+		CustomFields: &Example{
+			CA: "my-ca",
+		},
+	}
+
+	b := bytes.NewBuffer(make([]byte, 0))
+	err := json.NewEncoder(b).Encode(r)
+	assert.Nil(t, err)
+	expectedJSON := "{\"id\":\"my-id\",\"customAttr\":\"my-ca\"}\n"
+	assert.Equal(t, expectedJSON, b.String())
 }

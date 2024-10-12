@@ -10,9 +10,9 @@ import (
 )
 
 type RecordsAPI interface {
-	View(string, any, RecordQuery) (Record, error)
-	Create(NewRecord, any, RecordQuery) (Record, error)
-	Update(string, map[string]any, any, RecordQuery) (Record, error)
+	View(string, any, *RecordQuery) (Record, error)
+	Create(NewRecord, any, *RecordQuery) (Record, error)
+	Update(string, any, any, *RecordQuery) (Record, error)
 	Delete(string) error
 }
 
@@ -34,8 +34,22 @@ func (r RecordQuery) ToQuery() string {
 }
 
 type NewRecord struct {
-	ID     string
-	Fields map[string]any
+	ID           string `json:"id,omitempty"`
+	CustomFields any    // must be a json-marshalable value to an object, such as a struct or map
+}
+
+func (r NewRecord) MarshalJSON() ([]byte, error) {
+	b, err := json.Marshal(r.CustomFields)
+	if err != nil {
+		return nil, err
+	}
+	if r.ID == "" {
+		return b, nil
+	}
+	buf := bytes.NewBuffer(make([]byte, 0))
+	buf.WriteString(fmt.Sprintf("{\"id\":\"%s\",", r.ID))
+	buf.Write(b[1:])
+	return buf.Bytes(), nil
 }
 
 type Record struct {
@@ -107,44 +121,37 @@ type recordClient struct {
 }
 
 // https://pocketbase.io/docs/api-records/#view-record
-func (r *recordClient) View(recordId string, out any, query RecordQuery) (Record, error) {
+func (r *recordClient) View(recordId string, out any, query *RecordQuery) (Record, error) {
 	url := fmt.Sprintf("%s/api/collections/%s/records/%s", r.config.Addr, r.collection, recordId)
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
-	req.Header.Add("Authorization", r.token)
-	req.URL.RawQuery = query.ToQuery()
+	req, err := prepareRequest(http.MethodGet, url, nil, r.tokenHolder)
+	if err != nil {
+		return Record{}, nil
+	}
+	if query != nil {
+		req.URL.RawQuery = query.ToQuery()
+	}
 	resp, err := r.config.Client.Do(req)
 	return handleRecordResponse(out, resp, err)
 }
 
 // https://pocketbase.io/docs/api-records/#create-record
-func (r *recordClient) Create(record NewRecord, out any, query RecordQuery) (Record, error) {
-	if record.ID != "" {
-		record.Fields["id"] = record.ID
-	}
-	body := bytes.NewBuffer(make([]byte, 0))
-	if err := json.NewEncoder(body).Encode(record.Fields); err != nil {
-		return Record{}, err
-	}
+func (r *recordClient) Create(record NewRecord, out any, query *RecordQuery) (Record, error) {
 	url := fmt.Sprintf("%s/api/collections/%s/records", r.config.Addr, r.collection)
-	req, _ := http.NewRequest(http.MethodPost, url, body)
-	req.Header.Add("Authorization", r.token)
-	req.Header.Add("Content-Type", "application/json")
-	req.URL.RawQuery = query.ToQuery()
+	req, _ := prepareRequest(http.MethodPost, url, record, r.tokenHolder)
+	if query != nil {
+		req.URL.RawQuery = query.ToQuery()
+	}
 	resp, err := r.config.Client.Do(req)
 	return handleRecordResponse(out, resp, err)
 }
 
 // https://pocketbase.io/docs/api-records/#update-record
-func (r *recordClient) Update(recordId string, update map[string]any, out any, query RecordQuery) (Record, error) {
-	body := bytes.NewBuffer(make([]byte, 0))
-	if err := json.NewEncoder(body).Encode(update); err != nil {
-		return Record{}, err
-	}
+func (r *recordClient) Update(recordId string, update, out any, query *RecordQuery) (Record, error) {
 	url := fmt.Sprintf("%s/api/collections/%s/records/%s", r.config.Addr, r.collection, recordId)
-	req, _ := http.NewRequest(http.MethodPatch, url, body)
-	req.Header.Add("Authorization", r.token)
-	req.Header.Add("Content-Type", "application/json")
-	req.URL.RawQuery = query.ToQuery()
+	req, _ := prepareRequest(http.MethodPatch, url, update, r.tokenHolder)
+	if query != nil {
+		req.URL.RawQuery = query.ToQuery()
+	}
 	resp, err := r.config.Client.Do(req)
 	return handleRecordResponse(out, resp, err)
 }
@@ -152,8 +159,7 @@ func (r *recordClient) Update(recordId string, update map[string]any, out any, q
 // https://pocketbase.io/docs/api-records/#delete-record
 func (r *recordClient) Delete(recordId string) error {
 	url := fmt.Sprintf("%s/api/collections/%s/records/%s", r.config.Addr, r.collection, recordId)
-	req, _ := http.NewRequest(http.MethodDelete, url, nil)
-	req.Header.Add("Authorization", r.token)
+	req, _ := prepareRequest(http.MethodDelete, url, nil, r.tokenHolder)
 	_, err := handleResponse[Record](r.config.Client.Do(req))
 	return err
 }

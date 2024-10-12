@@ -1,8 +1,10 @@
 package pocketbase
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 type userType int
@@ -38,7 +40,7 @@ func NewPocketBase(addr string, client *http.Client) *PBClient {
 
 func (p *PBClient) AsAdmin() AdminAPI {
 	if p.holder == nil {
-		p.holder = &tokenHolder{config: p.config}
+		p.holder = &tokenHolder{config: p.config, refresher: &tokenRefresher{mode: adminUser}}
 	}
 	if p.mode != adminUser {
 		p.holder.token = ""
@@ -49,7 +51,7 @@ func (p *PBClient) AsAdmin() AdminAPI {
 
 func (p *PBClient) AsUser() API {
 	if p.holder == nil {
-		p.holder = &tokenHolder{config: p.config}
+		p.holder = &tokenHolder{config: p.config, refresher: &tokenRefresher{mode: normalUser}}
 	}
 	if p.mode != normalUser {
 		p.holder.token = ""
@@ -61,6 +63,8 @@ func (p *PBClient) AsUser() API {
 func (p *PBClient) WithToken(token string) *PBClient {
 	p.AsUser()
 	p.holder.token = token
+	p.holder.refresher.refreshTime = getExpiryTime(token)
+	p.holder.refresher.collection = getCollectionID(token)
 	return p
 }
 
@@ -81,8 +85,9 @@ type API interface {
 }
 
 type tokenHolder struct {
-	config *pbConfig
-	token  string
+	config    *pbConfig
+	token     string
+	refresher *tokenRefresher
 }
 
 func (t *tokenHolder) Admins() AdminsAPI {
@@ -107,6 +112,28 @@ func (t *tokenHolder) Auth(collection string) AuthAPI {
 	}
 }
 
+func prepareRequest(method, url string, payload any, t *tokenHolder) (*http.Request, error) {
+	var bb *bytes.Buffer
+	if payload != nil {
+		bb := bytes.NewBuffer(make([]byte, 0))
+		if err := json.NewEncoder(bb).Encode(payload); err != nil {
+			return nil, err
+		}
+	}
+	req, err := http.NewRequest(method, url, bb)
+	if err != nil {
+		return nil, err
+	}
+	if payload != nil {
+		req.Header.Add("Content-Type", "application/json")
+	}
+	if t.token != "" {
+		t.refresher.refreshToken(t)
+		req.Header.Add("Authorization", t.token)
+	}
+	return req, nil
+}
+
 func handleResponse[T any](resp *http.Response, err error) (T, error) {
 	defer resp.Body.Close()
 	empty := *new(T)
@@ -121,4 +148,32 @@ func handleResponse[T any](resp *http.Response, err error) (T, error) {
 		return empty, err
 	}
 	return *data, err
+}
+
+type tokenRefresher struct {
+	username    string
+	password    string
+	mode        userType
+	collection  string
+	refreshTime time.Time
+}
+
+func (t *tokenRefresher) refreshToken(h *tokenHolder) {
+	if time.Now().Before(t.refreshTime) {
+		return
+	}
+	switch t.mode {
+	case adminUser:
+		//
+		if _, err := h.Admins().RefreshAuth(); err != nil {
+			h.Admins().PasswordAuth(AdminPasswordBody{t.username, t.password})
+		}
+	case normalUser:
+		fallthrough
+	default:
+		//
+		if _, err := h.Auth(t.collection).RefreshAuth(nil); err != nil {
+			h.Auth(t.collection).PasswordAuth(AuthPasswordBody{t.username, t.password})
+		}
+	}
 }

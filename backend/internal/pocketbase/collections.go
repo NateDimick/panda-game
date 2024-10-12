@@ -1,8 +1,6 @@
 package pocketbase
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -71,11 +69,10 @@ type CollectionResponse struct {
 // https://pocketbase.io/docs/api-collections/#view-collection
 func (t *tokenHolder) View(collection string, query CollectionQuery) (CollectionResponse, error) {
 	url := fmt.Sprintf("%s/api/collections/%s", t.config.Addr, collection)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := prepareRequest(http.MethodGet, url, nil, t)
 	if err != nil {
 		return CollectionResponse{}, err
 	}
-	req.Header.Add("Authorization", t.token)
 	return handleResponse[CollectionResponse](t.config.Client.Do(req))
 }
 
@@ -86,13 +83,7 @@ func (t *tokenHolder) Create(col NewCollection, query CollectionQuery) (Collecti
 	default:
 		return CollectionResponse{}, errors.New("NewCollection is not of the right type")
 	}
-	body := bytes.NewBuffer(make([]byte, 0))
-	if err := json.NewEncoder(body).Encode(&col); err != nil {
-		return CollectionResponse{}, err
-	}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/collections", t.config.Addr), body)
-	req.Header.Add("Authorization", t.token)
-	req.Header.Add("Content-Type", "application/json")
+	req, err := prepareRequest(http.MethodPost, fmt.Sprintf("%s/api/collections", t.config.Addr), col, t)
 	if err != nil {
 		return CollectionResponse{}, err
 	}

@@ -31,18 +31,18 @@ type AdminAuthResponse struct {
 
 // https://pocketbase.io/docs/api-admins/#auth-with-password
 func (t *tokenHolder) PasswordAuth(credentials AdminPasswordBody) (AdminAuthResponse, error) {
-	body := bytes.NewBuffer(make([]byte, 0))
-	if err := json.NewEncoder(body).Encode(credentials); err != nil {
-		return AdminAuthResponse{}, err
-	}
+	t.token = ""
 	url := fmt.Sprintf("%s/api/admins/auth-with-password", t.config.Addr)
-	req, err := http.NewRequest(http.MethodPost, url, body)
+	req, err := prepareRequest(http.MethodPost, url, credentials, t)
 	if err != nil {
 		return AdminAuthResponse{}, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 	auth, err := handleResponse[AdminAuthResponse](t.config.Client.Do(req))
 	t.setToken(auth)
+	t.refresher.username = credentials.Identity
+	t.refresher.password = credentials.Password
+	t.refresher.refreshTime = getExpiryTime(t.token)
 	return auth, err
 }
 
@@ -56,6 +56,7 @@ func (t *tokenHolder) RefreshAuth() (AdminAuthResponse, error) {
 	req.Header.Add("Authorization", t.token)
 	auth, err := handleResponse[AdminAuthResponse](t.config.Client.Do(req))
 	t.setToken(auth)
+	t.refresher.refreshTime = getExpiryTime(t.token)
 	return auth, err
 }
 

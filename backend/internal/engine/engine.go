@@ -105,7 +105,7 @@ func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusUnauthorized)
 		return err
 	}
-	resp, err := pocketbase.NewPocketBase("todo", nil).WithToken(token).AsUser().Auth("players").RefreshAuth(pocketbase.RecordQuery{})
+	resp, err := pocketbase.NewPocketBase("todo", nil).WithToken(token).AsUser().Auth("players").RefreshAuth(nil)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusForbidden)
