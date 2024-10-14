@@ -173,7 +173,7 @@ func NewGame() *GameState {
 			ActionsUsed: make([]ActionType, 0),
 		},
 		TurnCounter: TurnCounter{
-			Round:    1,
+			Round:    0,
 			Position: -1,
 		},
 	}
@@ -191,8 +191,7 @@ func (g *GameState) AddPlayers(ps []Player) {
 
 func (g *GameState) NextTurn() {
 	order := (g.TurnCounter.Position + 1) % len(g.Players)
-	if order == len(g.Players) {
-		order = 0
+	if order == 0 {
 		g.TurnCounter.Round++
 	}
 	g.TurnCounter.Position = order
@@ -331,12 +330,10 @@ func (g *GameState) ValidatePlayerAction(action PromptResponse) bool {
 	if g.CurrentTurn.CurrentPrompt.Pid != action.Pid {
 		return false
 	}
-	for _, opt := range g.CurrentTurn.CurrentPrompt.SelectFrom {
-		if opt == action.Selection { // this is a toss up whether it will work or not (because custom types) but my gut says both of these will be freshly json parsed as generic json types (string or map[string]interface{}) so the comparison will be ok
-			return true
-		}
+	if len(g.CurrentTurn.CurrentPrompt.SelectFrom) > 0 && !slices.Contains(g.CurrentTurn.CurrentPrompt.SelectFrom, action.Selection) {
+		return false
 	}
-	return false
+	return true
 }
 
 // process a player's choice and return the next prompt

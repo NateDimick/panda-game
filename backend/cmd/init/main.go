@@ -88,7 +88,8 @@ func main() {
 			Type: "base",
 			Schema: []pocketbase.Schema{
 				pocketbase.SchemaBuilder("gameId", pocketbase.TextOptions{}),
-				pocketbase.SchemaBuilder("state", pocketbase.JSONOptions{MaxSize: 20000}),
+				pocketbase.SchemaBuilder("state", pocketbase.JSONOptions{MaxSize: 2000000}),
+				pocketbase.SchemaBuilder("lobby", pocketbase.JSONOptions{MaxSize: 2000000}),
 			},
 		},
 		System: *pBool(true),
