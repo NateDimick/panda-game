@@ -20,42 +20,101 @@ const (
 	NoWeather     WeatherType = "NONE"
 )
 
+func (w *WeatherType) UnmarshalText(b []byte) error {
+	*w = WeatherType(string(b))
+	return nil
+}
+
 type GameState struct {
 	// what has been placed on the board and where
 	Board *Board `json:"board"`
-	// who's playing and what they posess
-	Players []*Player `json:"players"`
+	// who's playing and what they possess
+	Players []Player `json:"players"`
 	// info about the current player turn. can be used to re-issue a command to a re-joining player
-	CurrentTurn *Turn `json:"-"`
+	CurrentTurn Turn `json:"currentTurn"`
 	// unused plot tiles
-	PlotDeck []DeckPlot `json:"-"` // TODO: when sent to UI, send height of plot deck, not contents
+	PlotDeck []DeckPlot `json:"plotDeck"` // TODO: when sent to UI, send height of plot deck, not contents
 	// unused improvements
 	AvailableImprovements ImprovementReserve `json:"improvementReserve"`
 	// number of irrigations available
 	IrrigationReserve int `json:"irrigationReserve"`
 	// undrawn objectives
-	ObjectiveDecks map[ObjectiveType][]Objective `json:"-"`
+	ObjectiveDecks map[ObjectiveType][]Objective `json:"objectiveDecks"`
 	// messages sent by the server to players
 	GameLog []GameMessage `json:"gameLog"`
 	// messages sent by players to the room
 	ChatLog []ChatMessage `json:"chatLog"`
 	// playerID of player who won emperor
-	EmperorWinner string `json:"-"`
+	EmperorWinner string `json:"emperor"`
 	// keeps track of where in the game the turn in
-	TurnCounter *TurnCounter `json:"turnCounter"`
+	TurnCounter TurnCounter `json:"turnCounter"`
+}
+
+func (g GameState) ClientSafe(recipient string) ClientGameState {
+	c := ClientGameState{
+		Board:                 g.Board,
+		PlotDeckHeight:        len(g.PlotDeck),
+		AvailableImprovements: g.AvailableImprovements,
+		IrrigationReserve:     g.IrrigationReserve,
+		EmperorWinner:         g.EmperorWinner,
+		TurnCounter:           g.TurnCounter,
+	}
+	cp := make([]ClientPlayer, len(g.Players))
+	for i, p := range g.Players {
+		cp[i] = p.ClientSafe(recipient)
+	}
+	c.Players = cp
+	oh := make(map[ObjectiveType]int)
+	for k := range g.ObjectiveDecks {
+		oh[k] = len(g.ObjectiveDecks[k])
+	}
+	c.ObjectiveDeckHeights = oh
+	c.Turn = g.CurrentTurn.ClientSafe(recipient)
+
+	return c
+}
+
+type ClientGameState struct {
+	Board                 *Board                `json:"board"`
+	Players               []ClientPlayer        `json:"players"`
+	Turn                  ClientTurn            `json:"turn"`
+	PlotDeckHeight        int                   `json:"plotDeckHeight"`
+	AvailableImprovements ImprovementReserve    `json:"improvementReserve"`
+	IrrigationReserve     int                   `json:"irrigationReserve"`
+	ObjectiveDeckHeights  map[ObjectiveType]int `json:"objectiveDeckHeights"`
+	EmperorWinner         string                `json:"emperor"`
+	TurnCounter           TurnCounter           `json:"turnCounter"`
+}
+
+type ClientTurn struct {
+	YourTurn bool        `json:"yourTurn"`
+	Prompt   Prompt      `json:"prompt,omitempty"`
+	Weather  WeatherType `json:"weather"`
 }
 
 type DeckPlot struct {
-	Type        PlotType
-	Improvement ImprovementType
+	Type        PlotType        `json:"type"`
+	Improvement ImprovementType `json:"improvement"`
 }
 
 type Turn struct {
-	PlayerID         string
-	ActionsUsed      []ActionType // the actions the player has already taken
-	CurrentPrompt    Prompt
-	ContextSelection interface{} // for actions that require 2 choices, this is the first choice
-	Weather          WeatherType
+	PlayerID         string       `json:"playerId"`
+	ActionsUsed      []ActionType `json:"actionsUsed"` // the actions the player has already taken
+	CurrentPrompt    Prompt       `json:"prompt"`
+	ContextSelection interface{}  `json:"-"` // for actions that require 2 choices, this is the first choice
+	Weather          WeatherType  `json:"weather"`
+}
+
+func (t Turn) ClientSafe(recipient string) ClientTurn {
+	c := ClientTurn{
+		YourTurn: recipient == t.PlayerID,
+		Weather:  t.Weather,
+	}
+	if c.YourTurn {
+		c.Prompt = t.CurrentPrompt
+	}
+
+	return c
 }
 
 type ChatMessage struct {
@@ -109,11 +168,11 @@ func NewGame() *GameState {
 		PlotDeck:              pd,
 		GameLog:               make([]GameMessage, 0),
 		ChatLog:               make([]ChatMessage, 0),
-		CurrentTurn: &Turn{
+		CurrentTurn: Turn{
 			Weather:     NoWeather,
 			ActionsUsed: make([]ActionType, 0),
 		},
-		TurnCounter: &TurnCounter{
+		TurnCounter: TurnCounter{
 			Round:    1,
 			Position: -1,
 		},
@@ -121,7 +180,7 @@ func NewGame() *GameState {
 	return g
 }
 
-func (g *GameState) AddPlayers(ps []*Player) {
+func (g *GameState) AddPlayers(ps []Player) {
 	// shuffle player order
 	rand.Shuffle(len(ps), func(i, j int) {
 		ps[1], ps[j] = ps[j], ps[i]
@@ -138,7 +197,7 @@ func (g *GameState) NextTurn() {
 	}
 	g.TurnCounter.Position = order
 	player := g.Players[order]
-	g.CurrentTurn = &Turn{
+	g.CurrentTurn = Turn{
 		PlayerID:    player.ID,
 		Weather:     NoWeather,
 		ActionsUsed: make([]ActionType, 0),
@@ -190,7 +249,7 @@ func (g GameState) GetCurrentPlayer() *Player {
 	pid := g.CurrentTurn.PlayerID
 	for _, p := range g.Players {
 		if p.ID == pid {
-			return p
+			return &p
 		}
 	}
 	return nil
@@ -521,7 +580,7 @@ func (g *GameState) CompleteObjectives() {
 		}
 	}
 	if g.awardEmperorCard(p) {
-		p.CompleteObjectives = append(p.CompleteObjectives, Objective{EmperorObjective{}})
+		p.CompleteObjectives = append(p.CompleteObjectives, Objective{EmperorObjective{Value: 2, OT: EmperorObjectiveType}})
 	}
 	p.Objectives = incomplete
 }

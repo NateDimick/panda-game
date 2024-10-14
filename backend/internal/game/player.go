@@ -7,9 +7,9 @@ import (
 type Player struct {
 	Name string `json:"name"`
 	// a unique identifier for the player
-	ID string `json:"-"`
+	ID string `json:"id"`
 	// the player's turn order
-	Order int `json:"-"`
+	Order int `json:"order"`
 	// the number of irrigations in reserve
 	Irrigations int `json:"irrigationReserve"`
 	// the player's eaten bamboo reserve (a count of each type)
@@ -17,9 +17,43 @@ type Player struct {
 	// the player's improvement reserve (a count of each type)
 	Improvements ImprovementReserve `json:"improvementReserve"`
 	// the objective cards in the player's possession, incomplete
-	Objectives []Objective `json:"-"` // TODO: when sending to UI, share number of objectives and types, but not secret info (value, goal)
+	Objectives []Objective `json:"objectives"` // TODO: when sending to UI, share number of objectives and types, but not secret info (value, goal)
 	// Objectives in the player's possession that have been completed
 	CompleteObjectives []Objective `json:"completeObjectives"`
+}
+
+type ClientPlayer struct {
+	Name               string                `json:"name"`
+	Position           int                   `json:"position"`
+	Irrigations        int                   `json:"irrigationReserve"`
+	Bamboo             BambooReserve         `json:"bambooReserve"`
+	Improvements       ImprovementReserve    `json:"improvementReserve"`
+	Objectives         []Objective           `json:"objectives,omitempty"`
+	HiddenObjectives   map[ObjectiveType]int `json:"hiddenObjectives,omitempty"`
+	CompleteObjectives []Objective           `json:"completeObjectives"`
+}
+
+func (p Player) ClientSafe(recipient string) ClientPlayer {
+	c := ClientPlayer{
+		Name:               p.Name,
+		Position:           p.Order,
+		Irrigations:        p.Irrigations,
+		Bamboo:             p.Bamboo,
+		Improvements:       p.Improvements,
+		CompleteObjectives: p.CompleteObjectives,
+	}
+
+	if p.ID == recipient {
+		c.Objectives = p.Objectives
+	} else {
+		h := make(map[ObjectiveType]int)
+		for _, o := range p.Objectives {
+			h[o.Type()]++
+		}
+		c.HiddenObjectives = h
+	}
+
+	return c
 }
 
 type BambooReserve map[PlotType]int
@@ -53,8 +87,8 @@ const (
 	EmperorObjectiveType  ObjectiveType = "EMPEROR"
 )
 
-func (p *ObjectiveType) UnmarshalText(b []byte) error {
-	*p = ObjectiveType(string(b))
+func (o *ObjectiveType) UnmarshalText(b []byte) error {
+	*o = ObjectiveType(string(b))
 	return nil
 }
 
@@ -71,34 +105,32 @@ type Objective struct {
 	ObjectiveChecker
 }
 
+func (o *Objective) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.ObjectiveChecker)
+}
+
 func (o *Objective) UnmarshalJSON(b []byte) error {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	if err := json.Unmarshal(b, &m); err != nil {
 		return err
 	}
-	ob := m["ObjectiveChecker"].(map[string]interface{})
 
-	bs, err := json.Marshal(ob)
-	if err != nil {
-		return err
-	}
-
-	switch ObjectiveType(ob["OT"].(string)) {
+	switch ObjectiveType(m["type"].(string)) {
 	case PandaObjectiveType:
 		ob := new(PandaObjective)
-		if err := json.Unmarshal(bs, ob); err != nil {
+		if err := json.Unmarshal(b, ob); err != nil {
 			return err
 		}
 		o.ObjectiveChecker = *ob
 	case PlotObjectiveType:
 		ob := new(PlotObjective)
-		if err := json.Unmarshal(bs, ob); err != nil {
+		if err := json.Unmarshal(b, ob); err != nil {
 			return err
 		}
 		o.ObjectiveChecker = *ob
 	case GardenerObjectiveType:
 		ob := new(GardenerObjective)
-		if err := json.Unmarshal(bs, ob); err != nil {
+		if err := json.Unmarshal(b, ob); err != nil {
 			return err
 		}
 		o.ObjectiveChecker = *ob
@@ -107,11 +139,11 @@ func (o *Objective) UnmarshalJSON(b []byte) error {
 }
 
 type PandaObjective struct {
-	GreenCount  int
-	YellowCount int
-	PinkCount   int
-	Value       int
-	OT          ObjectiveType
+	GreenCount  int           `json:"greenRequired"`
+	YellowCount int           `json:"yellowRequired"`
+	PinkCount   int           `json:"pinkRequired"`
+	Value       int           `json:"points"`
+	OT          ObjectiveType `json:"type"`
 }
 
 func (o PandaObjective) Points() int {
@@ -130,12 +162,12 @@ func (o PandaObjective) IsComplete(p Player, b Board) bool {
 }
 
 type GardenerObjective struct {
-	Color       PlotType
-	Height      int
-	Count       int
-	Improvement ImprovementType
-	Value       int
-	OT          ObjectiveType
+	Color       PlotType        `json:"plotType"`
+	Height      int             `json:"requiredHeight"`
+	Count       int             `json:"requiredShoots"`
+	Improvement ImprovementType `json:"improvementCondition"`
+	Value       int             `json:"points"`
+	OT          ObjectiveType   `json:"type"`
 }
 
 func (o GardenerObjective) Points() int {
@@ -164,10 +196,10 @@ func (o GardenerObjective) IsComplete(p Player, b Board) bool {
 }
 
 type PlotObjective struct {
-	Value       int
-	AnchorColor PlotType
-	Neighbors   [6]PlotType
-	OT          ObjectiveType
+	Value       int           `json:"points"`
+	AnchorColor PlotType      `json:"anchorPlot"`
+	Neighbors   [6]PlotType   `json:"neighborPlots"`
+	OT          ObjectiveType `json:"type"`
 }
 
 func (o PlotObjective) Points() int {
@@ -213,7 +245,10 @@ func (o PlotObjective) IsComplete(p Player, b Board) bool {
 	return false
 }
 
-type EmperorObjective struct{}
+type EmperorObjective struct {
+	Value int           `json:"points"`
+	OT    ObjectiveType `json:"type"`
+}
 
 func (o EmperorObjective) Points() int {
 	return 2

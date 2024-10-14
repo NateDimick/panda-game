@@ -64,23 +64,24 @@ func (p *SelectType) UnmarshalText(b []byte) error {
 }
 
 type Prompt struct {
-	Action     PromptType
-	SelectType SelectType
-	SelectFrom []interface{}
-	Time       int
-	Pid        string
-	Gid        string
+	Action     PromptType `json:"action"`
+	SelectType SelectType `json:"selectType"`
+	SelectFrom []any      `json:"selectFrom"`
+	Time       int        `json:"time"` // TODO: should be a unix timestamp of when the prompt will expire, not a number of seconds
+	Pid        string     `json:"playerId"`
+	Gid        string     `json:"gameId"`
 }
 
 type PromptResponse struct {
-	Action    PromptType
-	Selection interface{}
-	Pid       string
-	Gid       string
+	Action    PromptType `json:"action"`
+	Selection any        `json:"selection"`
+	Pid       string     `json:"playerId"`
+	Gid       string     `json:"gameId"`
 }
 
 // given the type of prompt, perform some type conversion so the returned value can be directly asserted to the desired type
-func GetSelection(pt PromptType, s interface{}) interface{} {
+// TODO: can make this generic
+func GetSelection(pt PromptType, s any) any {
 	switch pt {
 	case ChooseAction:
 		// return ActionType
@@ -96,7 +97,7 @@ func GetSelection(pt PromptType, s interface{}) interface{} {
 		return ImprovementType(s.(string))
 	case ChoosePlot:
 		// convert to DeckPlot
-		m := s.(map[string]interface{})
+		m := s.(map[string]any)
 		t := PlotType(m["Type"].(string))
 		i := ImprovementType(m["Improvement"].(string))
 		dp := DeckPlot{
@@ -113,8 +114,8 @@ func NewPromptID() string {
 	return uuid.NewString()
 }
 
-func ConvertToInterfaceSlice[T any](a []T) []interface{} {
-	s := make([]interface{}, len(a))
+func ConvertToInterfaceSlice[T any](a []T) []any {
+	s := make([]any, len(a))
 	for i, v := range a {
 		s[i] = v
 	}
@@ -130,7 +131,7 @@ func AutoPlay(t Turn) PromptResponse {
 	}
 }
 
-func StartGame(players []*Player) *GameState {
+func StartGame(players []Player) *GameState {
 	g := NewGame()
 	g.AddPlayers(players)
 	return g
@@ -160,7 +161,7 @@ func GameFlow(g *GameState, p PromptResponse) Prompt {
 			prompt = Prompt{
 				Action:     RollDie,
 				SelectType: RollSelectType,
-				SelectFrom: []interface{}{
+				SelectFrom: []any{
 					RollDie,
 				},
 				Time: 10,

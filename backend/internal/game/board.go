@@ -1,9 +1,7 @@
 package game
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"slices"
 )
@@ -14,8 +12,8 @@ type Board struct {
 	Edges            map[string]Edge `json:"edges"`
 	PandaLocation    string          `json:"pandaLocation"`
 	GardenerLocation string          `json:"gardenerLocation"`
-	plotCount        int
-	edgeCount        int
+	PlotCount        int             `json:"plotCount"`
+	EdgeCount        int             `json:"edgeCount"`
 }
 
 type PlotType string
@@ -44,8 +42,8 @@ const (
 	AnyImprovement        ImprovementType = "ANY"
 )
 
-func (p *ImprovementType) UnmarshalText(b []byte) error {
-	*p = ImprovementType(string(b))
+func (i *ImprovementType) UnmarshalText(b []byte) error {
+	*i = ImprovementType(string(b))
 	return nil
 }
 
@@ -77,16 +75,16 @@ type Plot struct {
 
 func (b *Board) NextPlotID() string {
 	defer func() {
-		b.plotCount++
+		b.PlotCount++
 	}()
-	return fmt.Sprintf("p%d", b.plotCount)
+	return fmt.Sprintf("p%d", b.PlotCount)
 }
 
 func (b *Board) NextEdgeID() string {
 	defer func() {
-		b.edgeCount++
+		b.EdgeCount++
 	}()
-	return fmt.Sprintf("e%d", b.edgeCount)
+	return fmt.Sprintf("e%d", b.EdgeCount)
 }
 
 func (b *Board) PlotNeighbor(pid string, idx int) *Plot {
@@ -369,8 +367,7 @@ func NewBoard() *Board {
 	b := new(Board)
 	b.Plots = make(map[string]Plot)
 	b.Edges = make(map[string]Edge)
-	pondUUID := b.NextPlotID()
-	b.PondID = pondUUID
+	b.PondID = b.NextPlotID()
 	b.PandaLocation = b.PondID
 	b.GardenerLocation = b.PondID
 
@@ -384,11 +381,11 @@ func NewBoard() *Board {
 			Type:      NoImprovement,
 			Permanent: true,
 		},
-		ID:    pondUUID,
+		ID:    b.PondID,
 		Edges: [6]string(pondEdgeIDs),
 	}
 
-	b.Plots[pondUUID] = pond
+	b.Plots[b.PondID] = pond
 
 	var futurePlotIDs [6]string
 	for i := 0; i < 6; i++ {
@@ -410,7 +407,7 @@ func NewBoard() *Board {
 		e := Edge{
 			Irrigated: true,
 			ID:        pondEdgeIDs[i],
-			Plots:     [2]string{pondUUID, futurePlotIDs[i]},
+			Plots:     [2]string{b.PondID, futurePlotIDs[i]},
 		}
 		// add that edge to the board
 		b.Edges[pondEdgeIDs[i]] = e
@@ -432,16 +429,6 @@ func NewBoard() *Board {
 		b.Plots[futurePlotIDs[i]] = future
 	}
 
-	return b
-}
-
-// Call this to deserialize a Board
-// it re-populates private fields that json does not serialize
-func UnmarshalBoard(s io.Reader) *Board {
-	b := new(Board)
-	json.NewDecoder(s).Decode(b)
-	b.edgeCount = len(b.Edges)
-	b.plotCount = len(b.Plots)
 	return b
 }
 

@@ -1,110 +1,110 @@
 [
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "NONE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "NONE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "NONE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "NONE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "NONE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "ENCLOSURE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "ENCLOSURE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "ENCLOSURE"
+        "type": "GREEN_BAMBOO",
+        "improvement": "ENCLOSURE"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "WATERSHED"
+        "type": "GREEN_BAMBOO",
+        "improvement": "WATERSHED"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "WATERSHED"
+        "type": "GREEN_BAMBOO",
+        "improvement": "WATERSHED"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "FERTILIZER"
+        "type": "GREEN_BAMBOO",
+        "improvement": "FERTILIZER"
     },
     {
-        "Type": "GREEN_BAMBOO",
-        "Improvement": "FERTILIZER"
+        "type": "GREEN_BAMBOO",
+        "improvement": "FERTILIZER"
     },
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },    
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },   
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },    
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },    
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "NONE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "ENCLOSURE"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "ENCLOSURE"
     },
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "WATERSHED"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "WATERSHED"
     },
     {
-        "Type": "YELLOW_BAMBOO",
-        "Improvement": "FERTILIZER"
+        "type": "YELLOW_BAMBOO",
+        "improvement": "FERTILIZER"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "NONE"
+        "type": "PINK_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "NONE"
+        "type": "PINK_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "NONE"
+        "type": "PINK_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "NONE"
+        "type": "PINK_BAMBOO",
+        "improvement": "NONE"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "ENCLOSURE"
+        "type": "PINK_BAMBOO",
+        "improvement": "ENCLOSURE"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "WATERSHED"
+        "type": "PINK_BAMBOO",
+        "improvement": "WATERSHED"
     },
     {
-        "Type": "PINK_BAMBOO",
-        "Improvement": "FERTILIZER"
+        "type": "PINK_BAMBOO",
+        "improvement": "FERTILIZER"
     }
 ]

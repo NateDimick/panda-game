@@ -1,6 +1,8 @@
 package game
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +22,20 @@ func TestNewGame(t *testing.T) {
 }
 
 func TestMarshalGame(t *testing.T) {
+	g := StartGame([]Player{
+		{
+			Name:         "Andy",
+			ID:           "one",
+			Improvements: ImprovementReserve(map[ImprovementType]int{EnclosureImprovement: 2}),
+			Bamboo:       BambooReserve(map[PlotType]int{PinkBambooPlot: 2, YellowBambooPlot: 1}),
+		},
+	})
 
+	bb := bytes.NewBuffer(make([]byte, 0))
+	json.NewEncoder(bb).Encode(g)
+	g2 := new(GameState)
+	json.NewDecoder(bb).Decode(g2)
+	assert.Equal(t, g, g2)
 }
 
 func TestDrawPlots(t *testing.T) {
@@ -70,13 +85,13 @@ func TestDrawObjective(t *testing.T) {
 
 func TestGetCurrentPlayer(t *testing.T) {
 	g := NewGame()
-	g.Players = []*Player{
+	g.Players = []Player{
 		{ID: "Harvey", Order: 1},
 		{ID: "Gwendolyn", Order: 2},
 		{ID: "Oliver", Order: 3},
 		{ID: "Mackenzie", Order: 4},
 	}
-	g.CurrentTurn = &Turn{
+	g.CurrentTurn = Turn{
 		PlayerID: "Oliver",
 	}
 
@@ -120,7 +135,7 @@ func TestValidatePlayerAction(t *testing.T) {
 
 func TestNextChooseAction(t *testing.T) {
 	g := NewGame()
-	g.AddPlayers([]*Player{{ID: "dummy", Improvements: make(ImprovementReserve)}})
+	g.AddPlayers([]Player{{ID: "dummy", Improvements: make(ImprovementReserve)}})
 	g.NextTurn()
 	// player has no resources and has used no actions, so should have 5 options
 	prompt := g.NextChooseActionPrompt()
@@ -184,7 +199,7 @@ func TestProcessPlayerAction(t *testing.T) {
 	// 24 inputs (11 + 8 for choose action + 5 weather die roll outcomes) = 20 tests cases that all require similar setup and logic to run
 	// this test is massive, but it covers about 50% of game.go
 	g := NewGame()
-	g.AddPlayers([]*Player{{ID: "dummy", Improvements: make(ImprovementReserve), Bamboo: make(BambooReserve)}})
+	g.AddPlayers([]Player{{ID: "dummy", Improvements: make(ImprovementReserve), Bamboo: make(BambooReserve)}})
 	g.NextTurn()
 
 	g.Board.AddPlot("p1", GreenBambooPlot, NoImprovement)
@@ -520,7 +535,7 @@ func TestProcessPlayerAction(t *testing.T) {
 
 func TestCompleteObjectives(t *testing.T) {
 	g := NewGame()
-	g.AddPlayers([]*Player{
+	g.AddPlayers([]Player{
 		{ID: "a", Objectives: make([]Objective, 0)},
 		{ID: "b", Objectives: make([]Objective, 0)},
 		{ID: "c", Objectives: make([]Objective, 0)},

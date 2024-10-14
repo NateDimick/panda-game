@@ -1,518 +1,428 @@
 {
     "PANDA": [
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 3,
-                "GreenCount": 2,
-                "YellowCount": 0,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 3,
+            "greenRequired": 2,
+            "yelowRequired": 0,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 3,
-                "GreenCount": 2,
-                "YellowCount": 0,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 3,
+            "greenRequired": 2,
+            "yelowRequired": 0,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 3,
-                "GreenCount": 2,
-                "YellowCount": 0,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 3,
+            "greenRequired": 2,
+            "yelowRequired": 0,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 3,
-                "GreenCount": 2,
-                "YellowCount": 0,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 3,
+            "greenRequired": 2,
+            "yelowRequired": 0,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 3,
-                "GreenCount": 2,
-                "YellowCount": 0,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 3,
+            "greenRequired": 2,
+            "yelowRequired": 0,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 4,
-                "GreenCount": 0,
-                "YellowCount": 2,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 4,
+            "greenRequired": 0,
+            "yelowRequired": 2,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 4,
-                "GreenCount": 0,
-                "YellowCount": 2,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 4,
+            "greenRequired": 0,
+            "yelowRequired": 2,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 4,
-                "GreenCount": 0,
-                "YellowCount": 2,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 4,
+            "greenRequired": 0,
+            "yelowRequired": 2,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 4,
-                "GreenCount": 0,
-                "YellowCount": 2,
-                "PinkCount": 0
-            }
+            "type": "PANDA",
+            "points": 4,
+            "greenRequired": 0,
+            "yelowRequired": 2,
+            "pinkRequired": 0
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 5,
-                "GreenCount": 0,
-                "YellowCount": 0,
-                "PinkCount": 2
-            }
+            "type": "PANDA",
+            "points": 5,
+            "greenRequired": 0,
+            "yelowRequired": 0,
+            "pinkRequired": 2
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 5,
-                "GreenCount": 0,
-                "YellowCount": 0,
-                "PinkCount": 2
-            }
+            "type": "PANDA",
+            "points": 5,
+            "greenRequired": 0,
+            "yelowRequired": 0,
+            "pinkRequired": 2
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 5,
-                "GreenCount": 0,
-                "YellowCount": 0,
-                "PinkCount": 2
-            }
+            "type": "PANDA",
+            "points": 5,
+            "greenRequired": 0,
+            "yelowRequired": 0,
+            "pinkRequired": 2
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 6,
-                "GreenCount": 1,
-                "YellowCount": 1,
-                "PinkCount": 1
-            }
+            "type": "PANDA",
+            "points": 6,
+            "greenRequired": 1,
+            "yelowRequired": 1,
+            "pinkRequired": 1
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 6,
-                "GreenCount": 1,
-                "YellowCount": 1,
-                "PinkCount": 1
-            }
+            "type": "PANDA",
+            "points": 6,
+            "greenRequired": 1,
+            "yelowRequired": 1,
+            "pinkRequired": 1
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PANDA",
-                "Value": 6,
-                "GreenCount": 1,
-                "YellowCount": 1,
-                "PinkCount": 1
-            }
+            "type": "PANDA",
+            "points": 6,
+            "greenRequired": 1,
+            "yelowRequired": 1,
+            "pinkRequired": 1
         }
     ],
     "PLOT": [
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 2,
-                "AnchorColor": "GREEN_BAMBOO",
-                "Neighbors": [
-                    "GREEN_BAMBOO",
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 2,
+            "anchorPlot": "GREEN_BAMBOO",
+            "neighborPlots": [
+                "GREEN_BAMBOO",
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 2,
-                "AnchorColor": "GREEN_BAMBOO",
-                "Neighbors": [
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 2,
+            "anchorPlot": "GREEN_BAMBOO",
+            "neighborPlots": [
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY",
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 2,
-                "AnchorColor": "GREEN_BAMBOO",
-                "Neighbors": [
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 2,
+            "anchorPlot": "GREEN_BAMBOO",
+            "neighborPlots": [
+                "GREEN_BAMBOO",
+                "ANY",
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 3,
-                "AnchorColor": "GREEN_BAMBOO",
-                "Neighbors": [
-                    "GREEN_BAMBOO",
-                    "GREEN_BAMBOO",
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 3,
+            "anchorPlot": "GREEN_BAMBOO",
+            "neighborPlots": [
+                "GREEN_BAMBOO",
+                "GREEN_BAMBOO",
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 3,
-                "AnchorColor": "YELLOW_BAMBOO",
-                "Neighbors": [
-                    "YELLOW_BAMBOO",
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 3,
+            "anchorPlot": "YELLOW_BAMBOO",
+            "neighborPlots": [
+                "YELLOW_BAMBOO",
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 3,
-                "AnchorColor": "YELLOW_BAMBOO",
-                "Neighbors": [
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 3,
+            "anchorPlot": "YELLOW_BAMBOO",
+            "neighborPlots": [
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY",
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 3,
-                "AnchorColor": "YELLOW_BAMBOO",
-                "Neighbors": [
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 3,
+            "anchorPlot": "YELLOW_BAMBOO",
+            "neighborPlots": [
+                "YELLOW_BAMBOO",
+                "ANY",
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 4,
-                "AnchorColor": "YELLOW_BAMBOO",
-                "Neighbors": [
-                    "YELLOW_BAMBOO",
-                    "YELLOW_BAMBOO",
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 4,
+            "anchorPlot": "YELLOW_BAMBOO",
+            "neighborPlots": [
+                "YELLOW_BAMBOO",
+                "YELLOW_BAMBOO",
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 4,
-                "AnchorColor": "PINK_BAMBOO",
-                "Neighbors": [
-                    "PINK_BAMBOO",
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 4,
+            "anchorPlot": "PINK_BAMBOO",
+            "neighborPlots": [
+                "PINK_BAMBOO",
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 4,
-                "AnchorColor": "PINK_BAMBOO",
-                "Neighbors": [
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 4,
+            "anchorPlot": "PINK_BAMBOO",
+            "neighborPlots": [
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY",
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 4,
-                "AnchorColor": "PINK_BAMBOO",
-                "Neighbors": [
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 4,
+            "anchorPlot": "PINK_BAMBOO",
+            "neighborPlots": [
+                "PINK_BAMBOO",
+                "ANY",
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 5,
-                "AnchorColor": "PINK_BAMBOO",
-                "Neighbors": [
-                    "PINK_BAMBOO",
-                    "PINK_BAMBOO",
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 5,
+            "anchorPlot": "PINK_BAMBOO",
+            "neighborPlots": [
+                "PINK_BAMBOO",
+                "PINK_BAMBOO",
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 3,
-                "AnchorColor": "YELLOW_BAMBOO",
-                "Neighbors": [
-                    "GREEN_BAMBOO",
-                    "YELLOW_BAMBOO",
-                    "GREEN_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 3,
+            "anchorPlot": "YELLOW_BAMBOO",
+            "neighborPlots": [
+                "GREEN_BAMBOO",
+                "YELLOW_BAMBOO",
+                "GREEN_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 4,
-                "AnchorColor": "GREEN_BAMBOO",
-                "Neighbors": [
-                    "PINK_BAMBOO",
-                    "GREEN_BAMBOO",
-                    "PINK_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 4,
+            "anchorPlot": "GREEN_BAMBOO",
+            "neighborPlots": [
+                "PINK_BAMBOO",
+                "GREEN_BAMBOO",
+                "PINK_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         },
         {
-            "ObjectiveChecker": {
-                "OT": "PLOT",
-                "Value": 5,
-                "AnchorColor": "PINK_BAMBOO",
-                "Neighbors": [
-                    "YELLOW_BAMBOO",
-                    "PINK_BAMBOO",
-                    "YELLOW_BAMBOO",
-                    "ANY",
-                    "ANY",
-                    "ANY"
-                ]
-            }
+            "type": "PLOT",
+            "points": 5,
+            "anchorPlot": "PINK_BAMBOO",
+            "neighborPlots": [
+                "YELLOW_BAMBOO",
+                "PINK_BAMBOO",
+                "YELLOW_BAMBOO",
+                "ANY",
+                "ANY",
+                "ANY"
+            ]
         }
     ],
     "GARDENER": [
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "GREEN_BAMBOO",
-                "Value": 3,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "FERTILIZER"
-            }
+            "type": "GARDENER",
+            "plotType": "GREEN_BAMBOO",
+            "points": 3,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "FERTILIZER"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "GREEN_BAMBOO",
-                "Value": 4,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "ENCLOSURE"
-            }
+            "type": "GARDENER",
+            "plotType": "GREEN_BAMBOO",
+            "points": 4,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "ENCLOSURE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "GREEN_BAMBOO",
-                "Value": 4,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "WATERSHED"
-            }
+            "type": "GARDENER",
+            "plotType": "GREEN_BAMBOO",
+            "points": 4,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "WATERSHED"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "GREEN_BAMBOO",
-                "Value": 5,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "NONE"
-            }
+            "type": "GARDENER",
+            "plotType": "GREEN_BAMBOO",
+            "points": 5,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "NONE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "GREEN_BAMBOO",
-                "Value": 8,
-                "Height": 4,
-                "Count": 4,
-                "Improvement": "ANY"
-            }
+            "type": "GARDENER",
+            "plotType": "GREEN_BAMBOO",
+            "points": 8,
+            "requiredHeight": 4,
+            "requiredShoots": 4,
+            "improvementCondition": "ANY"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "YELLOW_BAMBOO",
-                "Value": 4,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "FERTILIZER"
-            }
+            "type": "GARDENER",
+            "plotType": "YELLOW_BAMBOO",
+            "points": 4,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "FERTILIZER"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "YELLOW_BAMBOO",
-                "Value": 5,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "ENCLOSURE"
-            }
+            "type": "GARDENER",
+            "plotType": "YELLOW_BAMBOO",
+            "points": 5,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "ENCLOSURE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "YELLOW_BAMBOO",
-                "Value": 5,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "WATERSHED"
-            }
+            "type": "GARDENER",
+            "plotType": "YELLOW_BAMBOO",
+            "points": 5,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "WATERSHED"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "YELLOW_BAMBOO",
-                "Value": 6,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "NONE"
-            }
+            "type": "GARDENER",
+            "plotType": "YELLOW_BAMBOO",
+            "points": 6,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "NONE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "YELLOW_BAMBOO",
-                "Value": 7,
-                "Height": 3,
-                "Count": 3,
-                "Improvement": "ANY"
-            }
+            "type": "GARDENER",
+            "plotType": "YELLOW_BAMBOO",
+            "points": 7,
+            "requiredHeight": 3,
+            "requiredShoots": 3,
+            "improvementCondition": "ANY"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "PINK_BAMBOO",
-                "Value": 5,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "FERTILIZER"
-            }
+            "type": "GARDENER",
+            "plotType": "PINK_BAMBOO",
+            "points": 5,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "FERTILIZER"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "PINK_BAMBOO",
-                "Value": 6,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "ENCLOSURE"
-            }
+            "type": "GARDENER",
+            "plotType": "PINK_BAMBOO",
+            "points": 6,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "ENCLOSURE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "PINK_BAMBOO",
-                "Value": 6,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "WATERSHED"
-            }
+            "type": "GARDENER",
+            "plotType": "PINK_BAMBOO",
+            "points": 6,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "WATERSHED"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "PINK_BAMBOO",
-                "Value": 7,
-                "Height": 4,
-                "Count": 1,
-                "Improvement": "NONE"
-            }
+            "type": "GARDENER",
+            "plotType": "PINK_BAMBOO",
+            "points": 7,
+            "requiredHeight": 4,
+            "requiredShoots": 1,
+            "improvementCondition": "NONE"
         },
         {
-            "ObjectiveChecker": {
-                "OT": "GARDENER",
-                "Color": "PINK_BAMBOO",
-                "Value": 6,
-                "Height": 3,
-                "Count": 2,
-                "Improvement": "ANY"
-            }
+            "type": "GARDENER",
+            "plotType": "PINK_BAMBOO",
+            "points": 6,
+            "requiredHeight": 3,
+            "requiredShoots": 2,
+            "improvementCondition": "ANY"
         }
     ]
 }

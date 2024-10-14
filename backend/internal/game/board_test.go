@@ -30,7 +30,8 @@ func TestMarshalBoard(t *testing.T) {
 	bb := new(bytes.Buffer)
 	json.NewEncoder(bb).Encode(b)
 	assert.NotEmpty(t, bb.String())
-	b2 := UnmarshalBoard(bb)
+	b2 := new(Board)
+	json.NewDecoder(bb).Decode(b2)
 	assert.Equal(t, b, b2)
 }
 
