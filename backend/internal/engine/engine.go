@@ -63,13 +63,16 @@ func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
 	return msg.MessageType, payload, nil
 }
 
-func MessageSerializer(messageType string, payload any) (string, error) {
+func MessageSerializer(messageType string, payload any, req *http.Request) (string, error) {
 	shell := ServerEventShell{
 		MessageType: messageType,
 		Message:     payload,
 	}
-	// TODO: need some sort of way of checking if payload implements some CLientSafe interface, and format the message for just the specific recipient
-	// ... would need to pass connection id here somehow (likely by passing the http.Request as a param)
+	if cs, ok := payload.(game.ClientSafe); ok {
+		id := IDFromToken(req)
+		safePayload := cs.ClientSafe(id)
+		shell.Message = safePayload
+	}
 	bb := bytes.NewBuffer(make([]byte, 0))
 	if err := json.NewEncoder(bb).Encode(shell); err != nil {
 		return "", err

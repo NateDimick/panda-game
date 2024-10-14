@@ -177,7 +177,7 @@ func (f *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if event.Dest == TargetNone {
 					continue
 				}
-				msg, err := f.config.Serializer(event.Type, event.Payload)
+				msg, err := f.config.Serializer(event.Type, event.Payload, r)
 				if err != nil {
 					msg = fmt.Sprintf("Failed to serialize event: %s", err.Error())
 				}

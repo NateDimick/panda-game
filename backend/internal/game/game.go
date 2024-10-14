@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+type ClientSafe interface {
+	ClientSafe(string) any
+}
+
 type WeatherType string
 
 const (
@@ -50,7 +54,7 @@ type GameState struct {
 	TurnCounter TurnCounter `json:"turnCounter"`
 }
 
-func (g GameState) ClientSafe(recipient string) ClientGameState {
+func (g GameState) ClientSafe(recipient string) any {
 	c := ClientGameState{
 		Board:                 g.Board,
 		PlotDeckHeight:        len(g.PlotDeck),

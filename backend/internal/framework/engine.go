@@ -51,12 +51,12 @@ const (
 
 type EventPayloadDeserializer func(string, *http.Request) (eventType string, payload any, err error)
 
-type EventPayloadSerializer func(eventType string, payload any) (string, error)
+type EventPayloadSerializer func(eventType string, payload any, req *http.Request) (string, error)
 
 func defaultDeserializer(message string, _ *http.Request) (string, any, error) {
 	return "", message, nil
 }
 
-func defaultSerializer(t string, a any) (string, error) {
+func defaultSerializer(t string, a any, _ *http.Request) (string, error) {
 	return fmt.Sprintf("%s: %+v", t, a), nil
 }
