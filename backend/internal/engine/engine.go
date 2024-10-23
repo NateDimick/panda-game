@@ -13,6 +13,7 @@ import (
 	"pandagame/internal/pocketbase"
 	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 )
 
@@ -64,20 +65,28 @@ func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
 }
 
 func MessageSerializer(messageType string, payload any, req *http.Request) (string, error) {
-	shell := ServerEventShell{
-		MessageType: messageType,
-		Message:     payload,
+	respType := chi.URLParam(req, "type")
+	switch respType {
+	case "json":
+		shell := ServerEventShell{
+			MessageType: messageType,
+			Message:     payload,
+		}
+		if cs, ok := payload.(game.ClientSafe); ok {
+			id := IDFromToken(req)
+			safePayload := cs.ClientSafe(id)
+			shell.Message = safePayload
+		}
+		bb := bytes.NewBuffer(make([]byte, 0))
+		if err := json.NewEncoder(bb).Encode(shell); err != nil {
+			return "", err
+		}
+		return bb.String(), nil
+	case "htmx":
+		fallthrough
+	default:
+		return SerializeToHTML(messageType, payload)
 	}
-	if cs, ok := payload.(game.ClientSafe); ok {
-		id := IDFromToken(req)
-		safePayload := cs.ClientSafe(id)
-		shell.Message = safePayload
-	}
-	bb := bytes.NewBuffer(make([]byte, 0))
-	if err := json.NewEncoder(bb).Encode(shell); err != nil {
-		return "", err
-	}
-	return bb.String(), nil
 }
 
 func getToken(req *http.Request) (string, error) {
@@ -148,7 +157,8 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Host:       event.SourceId,
 			Players:    []string{event.SourceId},
 			Spectators: make([]string, 0),
-			GameId:     gameId}
+			GameId:     gameId,
+		}
 		response := framework.Event{
 			Source:  framework.TargetServer,
 			Dest:    framework.TargetClient,
@@ -220,7 +230,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Source:  framework.TargetServer,
 			Dest:    framework.TargetGroup,
 			DestId:  gameId,
-			Payload: g,
+			Payload: *g,
 			Type:    string(GameStart),
 		}
 		firstPrompt := game.GameFlow(g, game.PromptResponse{Action: game.NextPlayerTurn})
@@ -264,7 +274,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Source:  framework.TargetServer,
 			Dest:    framework.TargetGroup,
 			DestId:  gr.GID,
-			Payload: gr.State,
+			Payload: *gr.State,
 			Type:    string(GameStart),
 		}
 		return []framework.Event{broadcast, response}, nil

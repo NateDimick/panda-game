@@ -21,3 +21,4 @@ A bamboo gardening game like *Takenoko*, in your browser! That's the goal.
 * Taskfile `go install github.com/go-task/task/v3/cmd/task@latest`
 * covreport `go install github.com/cancue/covreport@latest`
 * Mockery `go install github.com/vektra/mockery/v2@latest`
+* Templ `go install github.com/a-h/templ/cmd/templ@latest`

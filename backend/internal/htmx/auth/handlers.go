@@ -19,7 +19,7 @@ func SignUpPage(w http.ResponseWriter, r *http.Request) {
 	global.Page("Sign Up", SignUp(false, "")).Render(r.Context(), w)
 }
 
-// /hmx/logout
+// /hmx/login
 func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	// TODO - open form, login with credentials, blah blah
 	// TODO - if error, return code 400 with AuthError

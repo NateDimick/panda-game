@@ -6,6 +6,7 @@ import (
 	"pandagame/internal/config"
 	"pandagame/internal/engine"
 	"pandagame/internal/framework"
+	"pandagame/internal/htmx"
 	"pandagame/internal/scaling"
 
 	"github.com/go-chi/chi"
@@ -27,7 +28,9 @@ func main() {
 		// disconnect handler - maybe unneeded?
 	})
 	mux := chi.NewMux()
+	mux.Get("/wss/{type}", fw.ServeHTTP)
 	mux.Get("/wss", fw.ServeHTTP)
+	htmx.AddHTMXRoutes(mux)
 	slog.Info("panda game server is running")
 	http.ListenAndServe(":3000", mux)
 }
