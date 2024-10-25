@@ -19,4 +19,5 @@ func AddHTMXRoutes(r chi.Router) {
 	r.Get("/", home.ServeHomePage)
 	// game routes
 	r.Get("/game", websocket.ServeWebsocketUI)
+	r.Get("/join", websocket.Join)
 }

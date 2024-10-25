@@ -16,7 +16,7 @@ tasks:
       - test -d .build
   build:
     desc: compile the backend server application
-    deps: [build-dir]
+    deps: [build-dir, templ]
     dir: backend
     cmds:
       - go build -o .build/panda-game-server cmd/panda-game/main.go
@@ -34,6 +34,15 @@ tasks:
       - ./.mockery.yaml
     generates:
       - ./**/mock_*.go
+  templ:
+    desc: generate templ go files
+    dir: backend
+    cmds: 
+      - templ generate
+    sources:
+      - ./**/*.templ
+    generates:
+      - ./**/*_templ.go
   unit-test:
     desc: run unit tests
     aliases: [ut, test]

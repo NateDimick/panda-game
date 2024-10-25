@@ -22,6 +22,8 @@ services:
     depends_on:
       - pb-init
       - nats
+    ports:
+      - 3000:3000
   nats:
     image: nats:latest
     container_name: nats

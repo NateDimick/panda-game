@@ -1,16 +1,19 @@
 package engine
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"pandagame/internal/game"
+	"pandagame/internal/htmx/websocket"
 )
 
 func SerializeToHTML(messageType string, payload any) (string, error) {
 	mt := ServerEventType(messageType)
 	switch mt {
 	case LobbyUpdate:
-		l, ok := payload.(Lobby)
+		l, ok := payload.(game.Lobby)
 		if !ok {
 			return "", errors.New("bad lobby payload")
 		}
@@ -40,24 +43,32 @@ func SerializeToHTML(messageType string, payload any) (string, error) {
 	}
 }
 
-func serializeLobbyUpdate(l Lobby) (string, error) {
-	return "todo", nil
+func serializeLobbyUpdate(l game.Lobby) (string, error) {
+	bb := bytes.NewBuffer(make([]byte, 0))
+	err := websocket.RenderLobby(l).Render(context.Background(), bb)
+	return bb.String(), err
 }
 
 func serializeGameState(g game.GameState) (string, error) {
-	return "todo", nil
+	bb := bytes.NewBuffer(make([]byte, 0))
+	err := websocket.RenderGameState(g).Render(context.Background(), bb)
+	return bb.String(), err
 }
 
 func serializeActionPrompt(p game.Prompt) (string, error) {
-	return "todo", nil
+	bb := bytes.NewBuffer(make([]byte, 0))
+	err := websocket.RenderPrompt(p).Render(context.Background(), bb)
+	return bb.String(), err
 }
 
 func serializeWarning(message string) (string, error) {
-	// target some normally empty warning div with the content text, maybe a popup?
-	return "todo", nil
+	bb := bytes.NewBuffer(make([]byte, 0))
+	err := websocket.RenderWarning(message).Render(context.Background(), bb)
+	return bb.String(), err
 }
 
 func serializeGoodbye() (string, error) {
-	// target full ws div and display DISCONNECTED
-	return "todo", nil
+	bb := bytes.NewBuffer(make([]byte, 0))
+	err := websocket.RenderGoodbye().Render(context.Background(), bb)
+	return bb.String(), err
 }

@@ -1,0 +1,41 @@
+package websocket
+
+templ WSFrame() {
+    // need event handlers:
+    // htmx:wsOpen - send a CreateLobby event if no fragment already
+    // htmx:wsConfigSend - modify form json to correct json
+    // htmx:wsError - because it will probably happen
+    // htmx:wsClose - see above, but less pessimisticly
+    <script>
+        document.body.addEventListener("htmx:wsOpen", (detail) => {
+            console.log("websocket connected!", detail.event)
+            if (window.location.hash) {
+                // Send JoinGame
+                detail.socketWrapper.send(JSON.stringify({
+                    MessageType: "JoinGame",
+                    Message: window.location.hash
+                }))
+            } else {
+                // Send CreateGame
+                detail.socketWrapper.send(JSON.stringify({
+                    MessageType: "CreateGame",
+                    Message: ""
+                }))
+            }
+        })
+        document.body.addEventListener("htmx:wsConfigSend", (detail) => {
+            // TODO: modify data to format that the server expects
+            console.log("Config Send Event", detail)
+        })        
+        document.body.addEventListener("htmx:wsError", (detail) => {
+            console.log("websocket error!", detail.error)
+        })        
+        document.body.addEventListener("htmx:wsClose", (detail) => {
+            console.log("websocket closed!", detail.event)
+        })
+    </script>
+    <div hx-ext="ws" ws-connect="/wss/htmx">
+        <div id="canvas">Connecting...</div>
+        <div id="warning"></div>
+    </div>
+}

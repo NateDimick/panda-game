@@ -2,15 +2,14 @@ package engine
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"pandagame/internal/config"
 	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"pandagame/internal/pocketbase"
+	"pandagame/internal/web"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -30,7 +29,7 @@ type ServerEventShell struct {
 type GameRecord struct {
 	GID   string          `json:"gameId"`
 	State *game.GameState `json:"state"`
-	Lobby Lobby           `json:"lobby"`
+	Lobby game.Lobby      `json:"lobby"`
 }
 
 func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
@@ -73,7 +72,7 @@ func MessageSerializer(messageType string, payload any, req *http.Request) (stri
 			Message:     payload,
 		}
 		if cs, ok := payload.(game.ClientSafe); ok {
-			id := IDFromToken(req)
+			id := web.IDFromRequest(req)
 			safePayload := cs.ClientSafe(id)
 			shell.Message = safePayload
 		}
@@ -89,38 +88,8 @@ func MessageSerializer(messageType string, payload any, req *http.Request) (stri
 	}
 }
 
-func getToken(req *http.Request) (string, error) {
-	tokenCookie, _ := req.Cookie("PGToken")
-	tokenHeader := req.Header.Get("Authorization")
-	token := ""
-	if tokenCookie != nil {
-		token = tokenCookie.Value
-	}
-	if tokenHeader != "" {
-		token = tokenHeader
-	}
-	if token == "" {
-		return "", errors.New("no token")
-	}
-	return token, nil
-}
-
-func IDFromToken(req *http.Request) string {
-	token, _ := getToken(req)
-	middle := strings.Split(token, ".")[1]
-	raw, err := base64.URLEncoding.DecodeString(middle)
-	if err != nil {
-		return ""
-	}
-	claims := make(map[string]any)
-	if err := json.NewDecoder(bytes.NewReader(raw)).Decode(&claims); err != nil {
-		return ""
-	}
-	return claims["id"].(string)
-}
-
 func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
-	token, err := getToken(r)
+	token, err := web.GetToken(r)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusUnauthorized)
@@ -133,16 +102,11 @@ func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusForbidden)
 		return err
 	}
-	w.Header().Add("Set-Cookie", fmt.Sprintf("PGToken:%s", resp.Token))
+	http.SetCookie(w, &http.Cookie{
+		Name:  web.PandaGameCookie,
+		Value: resp.Token,
+	})
 	return nil
-}
-
-type Lobby struct {
-	Host       string
-	Players    []string
-	Spectators []string
-	Started    bool
-	GameId     string
 }
 
 type PandaGameEngine struct {
@@ -153,7 +117,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 	switch ClientEventType(event.Type) {
 	case CreateGame:
 		gameId := uuid.NewString()
-		l := Lobby{
+		l := game.Lobby{
 			Host:       event.SourceId,
 			Players:    []string{event.SourceId},
 			Spectators: make([]string, 0),

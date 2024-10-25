@@ -1,0 +1,32 @@
+package websocket
+
+import "pandagame/internal/game"
+import "fmt"
+
+// TODO: in the future, it would be more htmx-y to only render what's being updated, rather than replacing the whole page
+templ RenderLobby(l game.Lobby) {
+    <div id="canvas" hx-push-url={ fmt.Sprintf("/game#%s", l.GameId)}>
+        <div id="gameInfo">
+            <span>Game ID: { l.GameId}</span>
+            <button>Copy (LOL not implemented yet sorry)</button>
+        </div>
+        <div id="players">
+            <span> Players </span>
+            <ul>
+            for _, name := range l.Players {
+                <li>{ name }</li>
+            }
+            </ul>
+        </div>
+        <div id="spectators">
+                <ul>
+            for _, name := range l.Spectators {
+                <li>{ name }</li>
+            }
+            </ul>
+        </div>
+        <div id="control">
+            <button>Start Game!</button>
+        </div>
+    </div>
+}

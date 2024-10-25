@@ -113,9 +113,8 @@ func (t *tokenHolder) Auth(collection string) AuthAPI {
 }
 
 func prepareRequest(method, url string, payload any, t *tokenHolder) (*http.Request, error) {
-	var bb *bytes.Buffer
+	bb := bytes.NewBuffer(make([]byte, 0))
 	if payload != nil {
-		bb := bytes.NewBuffer(make([]byte, 0))
 		if err := json.NewEncoder(bb).Encode(payload); err != nil {
 			return nil, err
 		}

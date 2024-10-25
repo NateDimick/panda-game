@@ -8,6 +8,7 @@ import (
 	"pandagame/internal/framework"
 	"pandagame/internal/htmx"
 	"pandagame/internal/scaling"
+	"pandagame/internal/web"
 
 	"github.com/go-chi/chi"
 )
@@ -20,7 +21,7 @@ func main() {
 		// TODO
 		fc.Groups = scaling.Grouper(appConfig)
 		fc.Relayer = scaling.Relayer(appConfig)
-		fc.IdGenerator = engine.IDFromToken
+		fc.IdGenerator = web.IDFromRequest
 		fc.Deserializer = engine.MessageDeserializer
 		fc.Serializer = engine.MessageSerializer
 		// error handler
