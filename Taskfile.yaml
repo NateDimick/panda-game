@@ -77,6 +77,13 @@ tasks:
     sources:
       - backend/**/*.go
       - docker/server.dockerfile
+  init-docker:
+    desc: build init tool image
+    cmds: 
+      - docker build -f docker/init.dockerfile -t panda-nats-init:latest .
+    sources:
+      - backend/**/*.go
+      - docker/init.dockerfile
   bot-docker:
     desc: build docker image for bot
     cmds:

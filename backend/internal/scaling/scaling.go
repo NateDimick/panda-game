@@ -23,7 +23,7 @@ func Relayer(cfg config.AppConfig) framework.Relayer {
 	case config.Singleton:
 		return framework.NewInMemRelayer()
 	case config.Colocated:
-		return NewNatsRelay(cfg.Nats.Address, cfg.Nats.RelaySubject) // TODO
+		return NewNatsRelay(cfg.Nats.Address, cfg.Nats.RelaySubject)
 	case config.Distributed:
 		panic("distributed is not possible yet")
 	default:

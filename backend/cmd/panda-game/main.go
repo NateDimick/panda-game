@@ -18,7 +18,6 @@ func main() {
 	appConfig := config.LoadAppConfig()
 	fw := framework.NewFramework(new(engine.PandaGameEngine))
 	fw.Configure(func(fc *framework.FrameworkConfig) {
-		// TODO
 		fc.Groups = scaling.Grouper(appConfig)
 		fc.Relayer = scaling.Relayer(appConfig)
 		fc.IdGenerator = web.IDFromRequest
@@ -32,6 +31,7 @@ func main() {
 	mux.Get("/wss/{type}", fw.ServeHTTP)
 	mux.Get("/wss", fw.ServeHTTP)
 	htmx.AddHTMXRoutes(mux)
+	fw.Start()
 	slog.Info("panda game server is running")
 	http.ListenAndServe(":3000", mux)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"slices"
 
 	"github.com/nats-io/nats.go"
@@ -17,9 +18,18 @@ type NatsKV struct {
 }
 
 func NewNatsKV(addr, bucket string) *NatsKV {
-	conn, _ := nats.Connect(addr)
-	js, _ := jetstream.New(conn)
-	kv, _ := js.KeyValue(context.Background(), bucket)
+	conn, err := nats.Connect(addr)
+	if err != nil {
+		slog.Warn("Failed to connect to nats", slog.String("error", err.Error()))
+	}
+	js, err := jetstream.New(conn)
+	if err != nil {
+		slog.Warn("failed to connect to jetstream", slog.String("error", err.Error()))
+	}
+	kv, err := js.KeyValue(context.Background(), bucket)
+	if err != nil {
+		slog.Warn("failed to setup jetstream kv", slog.String("error", err.Error()))
+	}
 	nk := &NatsKV{
 		nc:     conn,
 		bucket: bucket,

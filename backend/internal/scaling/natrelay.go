@@ -3,6 +3,7 @@ package scaling
 import (
 	"bytes"
 	"encoding/json"
+	"log/slog"
 	"pandagame/internal/framework"
 	"sync"
 
@@ -27,6 +28,7 @@ func NewNatsRelay(addr, subject string) *NatsRelay {
 	sub, _ := conn.Subscribe(subject, func(msg *nats.Msg) {
 		nr.lock.Lock()
 		defer nr.lock.Unlock()
+		slog.Info("incoming message from subject", slog.Any("message", *msg))
 		nr.buffer = append(nr.buffer, msg.Data)
 	})
 	nr.subscription = sub
@@ -36,7 +38,9 @@ func NewNatsRelay(addr, subject string) *NatsRelay {
 func (n *NatsRelay) Broadcast(m framework.RelayMessage) {
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(m)
-	n.nc.Publish(n.subject, buf.Bytes())
+	if err := n.nc.Publish(n.subject, buf.Bytes()); err != nil {
+		slog.Error("failed to publish to nats", slog.String("error", err.Error()))
+	}
 }
 
 func (n *NatsRelay) ReceiveBroadcasts() []framework.RelayMessage {
@@ -49,5 +53,8 @@ func (n *NatsRelay) ReceiveBroadcasts() []framework.RelayMessage {
 		result = append(result, *m)
 	}
 	n.buffer = make([]json.RawMessage, 0)
+	if len(result) > 0 {
+		slog.Info("broadcasts consumed", slog.Any("messages", result))
+	}
 	return result
 }

@@ -93,6 +93,7 @@ func (f *Framework) Start() {
 				} else {
 					for _, id := range m.RecipientIds {
 						if c, ok := f.connections[id]; ok {
+							slog.Info("message for active connection", slog.String("connID", id), slog.Any("message", m))
 							c <- m.Message
 						}
 					}
@@ -125,6 +126,7 @@ func (f *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		f.connections[connId] = writeChan
 
 		go func() {
+			slog.Info("Connection opened", slog.String("connId", connId))
 			for {
 				select {
 				case <-closeCtx.Done():
@@ -177,8 +179,10 @@ func (f *Framework) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if event.Dest == TargetNone {
 					continue
 				}
+				slog.Info("sending outgoing message", slog.String("connID", connId), slog.Any("message", event))
 				msg, err := f.config.Serializer(event.Type, event.Payload, r)
 				if err != nil {
+					slog.Warn("Failed to serialize message", slog.String("error", err.Error()))
 					msg = fmt.Sprintf("Failed to serialize event: %s", err.Error())
 				}
 				// send outgoing message
@@ -233,6 +237,7 @@ func (f *Framework) handleEvent(e Event) error {
 			continue
 		}
 		if len(msg.RecipientIds) > 0 || msg.All {
+			slog.Info("broadcasting", slog.Any("message", msg))
 			f.config.Relayer.Broadcast(msg)
 		}
 	}

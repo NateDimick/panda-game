@@ -1,5 +1,14 @@
 version: "3.8"
 services:
+  nats-init:
+    image: panda-nats-init:latest
+    container_name: nats-init
+    environment:
+      - NATS_ADDR=nats://nats:4222
+      - NATS_RELAY_SUBJECT=events
+      - NATS_GROUP_BUCKET=groups
+    depends_on:
+      - nats
   game-server:
     image: panda-game-server:latest
     container_name: pandagame
@@ -12,11 +21,11 @@ services:
       - DB_DB=pandaDB
       - NATS_ADDR=nats://nats:4222
       - NATS_RELAY_SUBJECT=events
-      - NATS_GROUPS_BUCKET=groups
+      - NATS_GROUP_BUCKET=groups
       - SCALE=COLOCATED
     restart: always
     depends_on:
-      - nats
+      - nats-init
       - surreal
     ports:
       - 3000:3000

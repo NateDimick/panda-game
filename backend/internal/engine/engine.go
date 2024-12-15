@@ -132,6 +132,12 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Type:    string(LobbyUpdate),
 			Payload: l,
 		}
+		join := framework.Event{
+			Source:   framework.TargetServer,
+			SourceId: event.SourceId,
+			Dest:     framework.TargetJoinGroup,
+			DestId:   gameId,
+		}
 		record := GameRecord{
 			RID:   recordID(gameId),
 			GID:   gameId,
@@ -141,7 +147,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 		if err := StoreGame(&record, false); err != nil {
 			return make([]framework.Event, 0), err
 		}
-		return []framework.Event{response}, nil
+		return []framework.Event{join, response}, nil
 	case Matchmake:
 		//
 	case CancelMatchmake:
