@@ -1,11 +1,15 @@
 package config
 
-import "os"
+import (
+	"os"
+	"pandagame/internal/pocketbase"
+)
 
 type AppConfig struct {
-	PB    PocketBaseConfig
-	Nats  NatsConfig
-	Scale ScalingLevel
+	PB            PocketBaseConfig
+	Nats          NatsConfig
+	Scale         ScalingLevel
+	pbAdminClient *pocketbase.PBClient
 }
 
 type ScalingLevel int
@@ -46,4 +50,15 @@ func loadScaleLevel() ScalingLevel {
 	default:
 		return Singleton
 	}
+}
+
+func PBAdmin() pocketbase.AdminAPI {
+	if globalConfig.pbAdminClient == nil {
+		globalConfig.pbAdminClient = pocketbase.NewPocketBase(globalConfig.PB.Address, nil)
+		globalConfig.pbAdminClient.AsAdmin().Admins().PasswordAuth(pocketbase.AdminPasswordBody{
+			Identity: globalConfig.PB.AdminIdentity,
+			Password: globalConfig.PB.AdminPassword,
+		})
+	}
+	return globalConfig.pbAdminClient.AsAdmin()
 }

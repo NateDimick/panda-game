@@ -3,6 +3,7 @@ package pocketbase
 import (
 	"bytes"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -72,6 +73,7 @@ type AdminAPI interface {
 	Collections() CollectionsAPI
 	Admins() AdminsAPI
 	Records(string) RecordsAPI
+	AdminAuth(string) AdminAuthAPI
 	// Backups
 	// Settings
 	// Logs
@@ -112,6 +114,13 @@ func (t *tokenHolder) Auth(collection string) AuthAPI {
 	}
 }
 
+func (t *tokenHolder) AdminAuth(collection string) AdminAuthAPI {
+	return &authClient{
+		collection:  collection,
+		tokenHolder: t,
+	}
+}
+
 func prepareRequest(method, url string, payload any, t *tokenHolder) (*http.Request, error) {
 	bb := bytes.NewBuffer(make([]byte, 0))
 	if payload != nil {
@@ -130,6 +139,7 @@ func prepareRequest(method, url string, payload any, t *tokenHolder) (*http.Requ
 		t.refresher.refreshToken(t)
 		req.Header.Add("Authorization", t.token)
 	}
+	slog.Info("prepared pocketbase request", slog.String("body", bb.String()), slog.Any("headers", req.Header), slog.String("method", method), slog.String("url", url))
 	return req, nil
 }
 

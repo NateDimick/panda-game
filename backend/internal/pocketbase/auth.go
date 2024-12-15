@@ -11,9 +11,12 @@ import (
 )
 
 type AuthAPI interface {
-	Create(NewAuthRecord, any) (Record, error)
 	PasswordAuth(AuthPasswordBody) (AuthResponse, error)
 	RefreshAuth(*RecordQuery) (AuthResponse, error)
+}
+
+type AdminAuthAPI interface {
+	Create(NewAuthRecord, any) (Record, error)
 }
 
 type authClient struct {
@@ -24,7 +27,7 @@ type authClient struct {
 type NewAuthCredentials struct {
 	Username        string `json:"username"`
 	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirmPassword"`
+	ConfirmPassword string `json:"passwordConfirm"`
 }
 
 type NewAuthRecord struct {
@@ -64,7 +67,7 @@ type AuthResponse struct {
 // https://pocketbase.io/docs/api-records/#create-record
 func (a *authClient) Create(record NewAuthRecord, out any) (Record, error) {
 	plainRecord := NewRecord{
-		CustomFields: record,
+		CustomFields: &record,
 	}
 	return a.Records(a.collection).Create(plainRecord, out, nil)
 }
@@ -78,11 +81,13 @@ func (a *authClient) PasswordAuth(credentials AuthPasswordBody) (AuthResponse, e
 		return AuthResponse{}, err
 	}
 	auth, err := handleResponse[AuthResponse](a.config.Client.Do(req))
-	a.setToken(auth)
-	a.refresher.collection = a.collection
-	a.refresher.username = credentials.Username
-	a.refresher.password = credentials.Password
-	a.refresher.refreshTime = getExpiryTime(a.token)
+	if err == nil {
+		a.setToken(auth)
+		a.refresher.collection = a.collection
+		a.refresher.username = credentials.Username
+		a.refresher.password = credentials.Password
+		a.refresher.refreshTime = getExpiryTime(a.token)
+	}
 	return auth, err
 }
 
@@ -98,8 +103,10 @@ func (a *authClient) RefreshAuth(query *RecordQuery) (AuthResponse, error) {
 		req.URL.RawQuery = query.ToQuery()
 	}
 	auth, err := handleResponse[AuthResponse](a.config.Client.Do(req))
-	a.setToken(auth)
-	a.refresher.refreshTime = getExpiryTime(a.token)
+	if err == nil {
+		a.setToken(auth)
+		a.refresher.refreshTime = getExpiryTime(a.token)
+	}
 	return auth, err
 }
 

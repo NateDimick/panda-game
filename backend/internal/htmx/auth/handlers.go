@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"log/slog"
 	"net/http"
 	"pandagame/internal/config"
 	"pandagame/internal/htmx/global"
@@ -27,6 +28,11 @@ func SignUpPage(w http.ResponseWriter, r *http.Request) {
 
 // /hmx/login
 func ApiLogin(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		AuthError(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	form := r.PostForm
 	username := form.Get("username")
 	password := form.Get("password")
@@ -58,12 +64,17 @@ func ApiLogout(w http.ResponseWriter, r *http.Request) {
 
 // /hmx/signup
 func ApiSignUp(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		AuthError(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	form := r.PostForm
 	username := form.Get("username")
 	password := form.Get("password")
 	confirmPassword := form.Get("confirmPassword")
-	cfg := config.LoadAppConfig()
-	_, err := pocketbase.NewPocketBase(cfg.PB.Address, nil).AsUser().Auth("players").Create(pocketbase.NewAuthRecord{
+	slog.Info("new sign up", slog.Any("postForm", form), slog.Any("form", r.Form))
+	_, err := config.PBAdmin().AdminAuth("players").Create(pocketbase.NewAuthRecord{
 		Credentials: pocketbase.NewAuthCredentials{
 			Username:        username,
 			Password:        password,
@@ -71,6 +82,7 @@ func ApiSignUp(w http.ResponseWriter, r *http.Request) {
 		},
 	}, nil)
 	if err != nil {
+		slog.Warn("Could not sign up new user", slog.String("error", err.Error()))
 		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)
 		return

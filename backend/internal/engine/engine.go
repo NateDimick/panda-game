@@ -110,7 +110,7 @@ func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
 }
 
 type PandaGameEngine struct {
-	PB pocketbase.PBClient
+	PB pocketbase.AdminAPI
 }
 
 func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event, error) {
@@ -250,8 +250,8 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 	return []framework.Event{}, nil
 }
 
-func GetGame(gameId string, pb pocketbase.PBClient) (*GameRecord, error) {
-	c := pb.AsAdmin().Records("games")
+func GetGame(gameId string, pb pocketbase.AdminAPI) (*GameRecord, error) {
+	c := pb.Records("games")
 	gr := new(GameRecord)
 	if _, err := c.View(gameId, gr, nil); err != nil {
 		return nil, err
@@ -259,8 +259,8 @@ func GetGame(gameId string, pb pocketbase.PBClient) (*GameRecord, error) {
 	return gr, nil
 }
 
-func StoreGame(gr *GameRecord, update bool, pb pocketbase.PBClient) error {
-	c := pb.AsAdmin().Records("games")
+func StoreGame(gr *GameRecord, update bool, pb pocketbase.AdminAPI) error {
+	c := pb.Records("games")
 	var err error
 	if update {
 		_, err = c.Update(gr.GID, gr, nil, nil)

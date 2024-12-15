@@ -50,3 +50,37 @@ func TestNewRecordMarshal(t *testing.T) {
 	expectedJSON := "{\"id\":\"my-id\",\"customAttr\":\"my-ca\"}\n"
 	assert.Equal(t, expectedJSON, b.String())
 }
+
+func jsonMarsh(j any) string {
+	if j != nil {
+		bb := bytes.NewBuffer(make([]byte, 0))
+		json.NewEncoder(bb).Encode(j)
+		return bb.String()
+	}
+	return ""
+}
+
+func TestNewAuthRecordMarshal(t *testing.T) {
+	r := NewRecord{
+		ID: "some-id",
+		CustomFields: &NewAuthRecord{
+			Credentials: NewAuthCredentials{
+				Username:        "test-dude",
+				Password:        "amazing",
+				ConfirmPassword: "amazing",
+			},
+			CustomFields: map[string]any{
+				"alpha": "beta",
+				"gamma": true,
+			},
+		},
+	}
+	b := bytes.NewBuffer(make([]byte, 0))
+	err := json.NewEncoder(b).Encode(r)
+	assert.Nil(t, err)
+	expectedJSON := "{\"id\":\"some-id\",\"username\":\"test-dude\",\"password\":\"amazing\",\"passwordConfirm\":\"amazing\",\"alpha\":\"beta\",\"gamma\":true}\n"
+	assert.Equal(t, expectedJSON, b.String())
+
+	json2 := jsonMarsh(r)
+	assert.Equal(t, expectedJSON, json2)
+}
