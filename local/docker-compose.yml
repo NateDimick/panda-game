@@ -1,19 +1,11 @@
 version: "3.8"
 services:
-  db-init:
-    image: panda-game-init:latest
-    environment:
-      - DB_ADDR=ws://surreal:8000
-      - DB_ADMIN=pandaAdmin
-      - DB_ADMIN_PASS=strongpassword
-      - DB_NS=pandaNS
-      - DB_DB=pandaDB
-    depends_on:
-      - surreal
   game-server:
     image: panda-game-server:latest
+    container_name: pandagame
     environment:
       - DB_ADDR=ws://surreal:8000
+      - DB_HTTP_ADDR=http://surreal:8000
       - DB_ADMIN=pandaAdmin
       - DB_ADMIN_PASS=strongpassword
       - DB_NS=pandaNS
@@ -24,7 +16,6 @@ services:
       - SCALE=COLOCATED
     restart: always
     depends_on:
-      - db-init
       - nats
       - surreal
     ports:
@@ -38,9 +29,24 @@ services:
       - 8222:8222
     command: "--js"
   surreal:
-    image: surrealdb:latest
+    image: surrealdb/surrealdb:latest-dev
     container_name: surreal
     ports:
       - 8000:8000
-    entrypoint: ["/surreal", "start", "--user","pandaAdmin", "--pass", "strongpassword"]
+    command: [ "start", "--user", "pandaAdmin", "--pass", "strongpassword"]
+    environment:
+      - SURREAL_IMPORT_FILE=/panda/players.suql
+      - SURREAL_PATH=rocksdb:/panda/db_data
+      - SURREAL_LOG=debug
+    volumes:
+      - type: bind
+        target: /panda/players.suql
+        source: ./players.suql
+      - type: bind
+        target: /panda/db_data
+        source: ./db_data
+        read_only: false
+        bind:
+          create_host_path: true
+          selinux: Z
 

@@ -2,6 +2,7 @@ package config
 
 type SurrealConfig struct {
 	Address       string
+	HTTPAddress   string
 	AdminIdentity string
 	AdminPassword string
 	Namespace     string

@@ -10,7 +10,7 @@ A bamboo gardening game like *Takenoko*, in your browser! That's the goal.
   * custom websocket event protocol with Gorilla Websockets
   * Chi router (lightweight, simple, close to std lib)
   * nats for event pub/sub, and kv
-  * pocketbase for auth, record storage
+  * surrealdb for auth, record storage
 
 ### Frontend
 

@@ -29,10 +29,10 @@ type ServerEventShell struct {
 }
 
 type GameRecord struct {
-	RID   models.RecordID
-	GID   string          `json:"gameId"`
-	State *game.GameState `json:"state"`
-	Lobby game.Lobby      `json:"lobby"`
+	RID   *models.RecordID `json:"id"`
+	GID   string           `json:"gameId"`
+	State *game.GameState  `json:"state"`
+	Lobby game.Lobby       `json:"lobby"`
 }
 
 func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
@@ -133,6 +133,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Payload: l,
 		}
 		record := GameRecord{
+			RID:   recordID(gameId),
 			GID:   gameId,
 			Lobby: l,
 			State: nil,
@@ -252,24 +253,31 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 	return []framework.Event{}, nil
 }
 
+func recordID(gameId string) *models.RecordID {
+	return &models.RecordID{
+		ID:    gameId,
+		Table: "game",
+	}
+}
+
 func GetGame(gameId string) (*GameRecord, error) {
 	db, _ := config.AdminSurreal()
-	records, err := surrealdb.Query[GameRecord](db, "SELECT * FROM games WHERE GID == $gameId", map[string]any{"gameId": gameId})
+	id := recordID(gameId)
+	record, err := surrealdb.Select[GameRecord](db, *id)
 	if err != nil {
 		return nil, err
 	}
-	result := *records
-	return &result[0].Result, nil
+	return record, nil
 }
 
 func StoreGame(gr *GameRecord, update bool) error {
 	db, _ := config.AdminSurreal()
-	_, err := surrealdb.Upsert[GameRecord](db, models.Table("games"), gr)
+	_, err := surrealdb.Upsert[[]GameRecord](db, models.Table("game"), gr)
 	return err
 }
 
 func DeleteGame(gr *GameRecord) error {
 	db, _ := config.AdminSurreal()
-	_, err := surrealdb.Delete[GameRecord, models.RecordID](db, gr.RID)
+	_, err := surrealdb.Delete[GameRecord](db, *gr.RID)
 	return err
 }

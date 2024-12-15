@@ -4,18 +4,20 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"pandagame/internal/config"
 	"pandagame/internal/htmx/global"
+	"pandagame/internal/sign"
 	"pandagame/internal/web"
 	"time"
 
 	_ "github.com/a-h/templ"
-	"github.com/surrealdb/surrealdb.go"
 )
 
 // /login
 func LoginPage(w http.ResponseWriter, r *http.Request) {
 	token, err := global.IsAuthenticatedRequest(r)
+	if err != nil {
+		slog.Warn("login: auth check error", slog.String("error", err.Error()))
+	}
 	authenticated := err == nil && token != ""
 	global.Page("Login", Login(authenticated, web.IDFromToken(token))).Render(r.Context(), w)
 }
@@ -23,6 +25,9 @@ func LoginPage(w http.ResponseWriter, r *http.Request) {
 // /signup
 func SignUpPage(w http.ResponseWriter, r *http.Request) {
 	token, err := global.IsAuthenticatedRequest(r)
+	if err != nil {
+		slog.Warn("signup: auth check error", slog.String("error", err.Error()))
+	}
 	authenticated := err == nil && token != ""
 	global.Page("Sign Up", SignUp(authenticated, web.IDFromToken(token))).Render(r.Context(), w)
 }
@@ -37,12 +42,7 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	form := r.PostForm
 	username := form.Get("username")
 	password := form.Get("password")
-	db, _ := config.Surreal()
-	token, err := db.SignIn(&surrealdb.Auth{
-		Username: username,
-		Password: password,
-		Access:   "user",
-	})
+	token, err := sign.In(username, password)
 
 	if err != nil {
 		AuthError(err.Error()).Render(r.Context(), w)
@@ -50,8 +50,11 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
-		Name:  web.PandaGameCookie,
-		Value: token,
+		Name:     web.PandaGameCookie,
+		Value:    token,
+		Secure:   true,
+		HttpOnly: true,
+		Path:     "/",
 	})
 	LoggedInForm(web.IDFromToken(token)).Render(r.Context(), w)
 }
@@ -82,13 +85,8 @@ func ApiSignUp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	db, _ := config.Surreal()
-	_, err := db.SignUp(&surrealdb.Auth{
-		Username: username,
-		Password: password,
-		Access:   "user",
-	})
-	if err != nil {
+
+	if err := sign.Up(username, password); err != nil {
 		slog.Warn("Could not sign up new user", slog.String("error", err.Error()))
 		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)

@@ -1,0 +1,22 @@
+DEFINE NAMESPACE pandaNS;
+USE NS pandaNS;
+DEFINE DATABASE pandaDB;
+USE DB pandaDB;
+DEFINE TABLE player SCHEMAFULL
+    PERMISSIONS
+		FOR select, update, delete WHERE id = $auth.id;;
+DEFINE FIELD name ON player TYPE string;
+DEFINE FIELD password ON player TYPE string;
+DEFINE INDEX name ON player FIELDS name UNIQUE;
+
+DEFINE ACCESS player ON DATABASE TYPE RECORD
+    SIGNIN (
+        SELECT * FROM player WHERE name = $name AND crypto::argon2::compare(password, $password)
+    )
+    SIGNUP (
+        CREATE type::thing("player", $name) CONTENT {
+            name: $name,
+            password: crypto::argon2::generate($password)
+        }
+    )
+    DURATION FOR TOKEN 16w, FOR SESSION 1y;

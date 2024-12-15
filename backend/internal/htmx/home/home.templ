@@ -2,10 +2,10 @@ package home
 
 import "pandagame/internal/htmx/global"
 
-templ HomePage(authenticated bool) {
+templ HomePage(authenticated bool, username string) {
     <h1>Welcome to Panda Game!</h1>
     if authenticated {
-        <p>Let's Play!</p>
+        <p>Hey, { username }, Let's Play!</p>
         @global.LinkButton("/game", "Create Game")
         <form hx-get="/join">
             <input type="text" name="gameId" placeholder="game id">

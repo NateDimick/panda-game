@@ -30,6 +30,7 @@ func LoadAppConfig() AppConfig {
 	}
 	globalConfig = new(AppConfig)
 	globalConfig.Surreal.Address = os.Getenv("DB_ADDR")
+	globalConfig.Surreal.HTTPAddress = os.Getenv("DB_HTTP_ADDR")
 	globalConfig.Surreal.AdminIdentity = os.Getenv("DB_ADMIN")
 	globalConfig.Surreal.AdminPassword = os.Getenv("DB_PASS")
 	globalConfig.Surreal.Namespace = os.Getenv("DB_NS")
