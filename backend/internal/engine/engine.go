@@ -4,16 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"pandagame/internal/config"
 	"pandagame/internal/framework"
 	"pandagame/internal/game"
-	"pandagame/internal/pocketbase"
 	"pandagame/internal/web"
 	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
+	"github.com/surrealdb/surrealdb.go"
+	"github.com/surrealdb/surrealdb.go/pkg/models"
 )
 
 type ClientEventShell struct {
@@ -27,6 +29,7 @@ type ServerEventShell struct {
 }
 
 type GameRecord struct {
+	RID   models.RecordID
 	GID   string          `json:"gameId"`
 	State *game.GameState `json:"state"`
 	Lobby game.Lobby      `json:"lobby"`
@@ -95,23 +98,22 @@ func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusUnauthorized)
 		return err
 	}
-	cfg := config.LoadAppConfig()
-	resp, err := pocketbase.NewPocketBase(cfg.PB.Address, nil).WithToken(token).AsUser().Auth("players").RefreshAuth(nil)
-	if err != nil {
+	db, _ := config.Surreal()
+	if err := db.Authenticate(token); err != nil {
 		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusForbidden)
 		return err
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:  web.PandaGameCookie,
-		Value: resp.Token,
-	})
+	userInfo, _ := db.Info()
+	slog.Info("db user info", slog.Any("info", userInfo))
+	// http.SetCookie(w, &http.Cookie{
+	// 	Name:  web.PandaGameCookie,
+	// 	Value: resp.Token,
+	// })
 	return nil
 }
 
-type PandaGameEngine struct {
-	PB pocketbase.AdminAPI
-}
+type PandaGameEngine struct{}
 
 func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event, error) {
 	switch ClientEventType(event.Type) {
@@ -135,7 +137,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Lobby: l,
 			State: nil,
 		}
-		if err := StoreGame(&record, false, p.PB); err != nil {
+		if err := StoreGame(&record, false); err != nil {
 			return make([]framework.Event, 0), err
 		}
 		return []framework.Event{response}, nil
@@ -145,7 +147,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 		//
 	case JoinGame:
 		gameId := event.Payload.(string)
-		gr, err := GetGame(gameId, p.PB)
+		gr, err := GetGame(gameId)
 		if err != nil {
 			return make([]framework.Event, 0), err
 		}
@@ -167,7 +169,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Payload: gr.Lobby,
 			Type:    string(LobbyUpdate),
 		}
-		if err := StoreGame(gr, true, p.PB); err != nil {
+		if err := StoreGame(gr, true); err != nil {
 			return make([]framework.Event, 0), err
 		}
 		return []framework.Event{response, broadcast}, nil
@@ -175,7 +177,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 		// TODO
 	case StartGame:
 		gameId := event.Payload.(string)
-		gr, err := GetGame(gameId, p.PB)
+		gr, err := GetGame(gameId)
 		if err != nil {
 			return []framework.Event{}, err
 		}
@@ -205,7 +207,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 			Type:    string(ActionPrompt),
 			Payload: firstPrompt,
 		}
-		if err := StoreGame(gr, true, p.PB); err != nil {
+		if err := StoreGame(gr, true); err != nil {
 			return make([]framework.Event, 0), err
 		}
 		return []framework.Event{broadcast, prompt}, nil
@@ -221,7 +223,7 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 		// TODO broadcast game state update
 	case TakeAction:
 		action := event.Payload.(game.PromptResponse)
-		gr, err := GetGame(action.Gid, p.PB)
+		gr, err := GetGame(action.Gid)
 		if err != nil {
 			return []framework.Event{}, err
 		}
@@ -250,22 +252,24 @@ func (p *PandaGameEngine) HandleEvent(event framework.Event) ([]framework.Event,
 	return []framework.Event{}, nil
 }
 
-func GetGame(gameId string, pb pocketbase.AdminAPI) (*GameRecord, error) {
-	c := pb.Records("games")
-	gr := new(GameRecord)
-	if _, err := c.View(gameId, gr, nil); err != nil {
+func GetGame(gameId string) (*GameRecord, error) {
+	db, _ := config.AdminSurreal()
+	records, err := surrealdb.Query[GameRecord](db, "SELECT * FROM games WHERE GID == $gameId", map[string]any{"gameId": gameId})
+	if err != nil {
 		return nil, err
 	}
-	return gr, nil
+	result := *records
+	return &result[0].Result, nil
 }
 
-func StoreGame(gr *GameRecord, update bool, pb pocketbase.AdminAPI) error {
-	c := pb.Records("games")
-	var err error
-	if update {
-		_, err = c.Update(gr.GID, gr, nil, nil)
-	} else {
-		_, err = c.Create(pocketbase.NewRecord{ID: gr.GID, CustomFields: gr}, nil, nil)
-	}
+func StoreGame(gr *GameRecord, update bool) error {
+	db, _ := config.AdminSurreal()
+	_, err := surrealdb.Upsert[GameRecord](db, models.Table("games"), gr)
+	return err
+}
+
+func DeleteGame(gr *GameRecord) error {
+	db, _ := config.AdminSurreal()
+	_, err := surrealdb.Delete[GameRecord, models.RecordID](db, gr.RID)
 	return err
 }

@@ -3,7 +3,6 @@ package global
 import (
 	"net/http"
 	"pandagame/internal/config"
-	"pandagame/internal/pocketbase"
 	"pandagame/internal/web"
 )
 
@@ -13,9 +12,8 @@ func IsAuthenticatedRequest(r *http.Request) (string, error) {
 		return "", err
 	}
 	if token != "" {
-		cfg := config.LoadAppConfig()
-		_, err := pocketbase.NewPocketBase(cfg.PB.Address, nil).WithToken(token).AsUser().Auth("players").RefreshAuth(nil)
-		if err != nil {
+		db, _ := config.Surreal()
+		if err := db.Authenticate(token); err != nil {
 			return "", err
 		}
 	}

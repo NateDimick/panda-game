@@ -1,27 +1,32 @@
 version: "3.8"
 services:
-  pb-init:
+  db-init:
     image: panda-game-init:latest
     environment:
-      - PB_ADDR=http://pocketbase:8080
-      - PB_ADMIN=admin@panda-game.com
-      - PB_ADMIN_PASS=strongpassword
+      - DB_ADDR=ws://surreal:8000
+      - DB_ADMIN=pandaAdmin
+      - DB_ADMIN_PASS=strongpassword
+      - DB_NS=pandaNS
+      - DB_DB=pandaDB
     depends_on:
-      - pocketbase
+      - surreal
   game-server:
     image: panda-game-server:latest
     environment:
-      - PB_ADDR=http://pocketbase:8080
-      - PB_ADMIN=admin@panda-game.com
-      - PB_ADMIN_PASS=strongpassword
+      - DB_ADDR=ws://surreal:8000
+      - DB_ADMIN=pandaAdmin
+      - DB_ADMIN_PASS=strongpassword
+      - DB_NS=pandaNS
+      - DB_DB=pandaDB
       - NATS_ADDR=nats://nats:4222
       - NATS_RELAY_SUBJECT=events
       - NATS_GROUPS_BUCKET=groups
       - SCALE=COLOCATED
     restart: always
     depends_on:
-      - pb-init
+      - db-init
       - nats
+      - surreal
     ports:
       - 3000:3000
   nats:
@@ -32,16 +37,10 @@ services:
       - 6222:6222
       - 8222:8222
     command: "--js"
-  pocketbase:
-    image: panda-game-pocketbase:latest
-    container_name: pocketbase
+  surreal:
+    image: surrealdb:latest
+    container_name: surreal
     ports:
-      - 8080:8080
-    volumes:
-      - type: bind
-        target: /pb/pb_data
-        source: ./pb_data
-        bind: 
-          create_host_path: true
-          selinux: z
+      - 8000:8000
+    entrypoint: ["/surreal", "start", "--user","pandaAdmin", "--pass", "strongpassword"]
 

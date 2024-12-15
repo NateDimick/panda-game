@@ -1,15 +1,17 @@
 package config
 
 import (
+	"errors"
 	"os"
-	"pandagame/internal/pocketbase"
+
+	"github.com/surrealdb/surrealdb.go"
 )
 
 type AppConfig struct {
-	PB            PocketBaseConfig
+	Surreal       SurrealConfig
 	Nats          NatsConfig
 	Scale         ScalingLevel
-	pbAdminClient *pocketbase.PBClient
+	surrealClient *surrealdb.DB
 }
 
 type ScalingLevel int
@@ -27,9 +29,11 @@ func LoadAppConfig() AppConfig {
 		return *globalConfig
 	}
 	globalConfig = new(AppConfig)
-	globalConfig.PB.Address = os.Getenv("PB_ADDR")
-	globalConfig.PB.AdminIdentity = os.Getenv("PB_ADMIN")
-	globalConfig.PB.AdminPassword = os.Getenv("PB_ADMIN_PASS")
+	globalConfig.Surreal.Address = os.Getenv("DB_ADDR")
+	globalConfig.Surreal.AdminIdentity = os.Getenv("DB_ADMIN")
+	globalConfig.Surreal.AdminPassword = os.Getenv("DB_PASS")
+	globalConfig.Surreal.Namespace = os.Getenv("DB_NS")
+	globalConfig.Surreal.Database = os.Getenv("DB_DB")
 	globalConfig.Nats.Address = os.Getenv("NATS_ADDR")
 	globalConfig.Nats.RelaySubject = os.Getenv("NATS_RELAY_SUBJECT")
 	globalConfig.Nats.GroupBucket = os.Getenv("NATS_GROUP_BUCKET")
@@ -52,13 +56,21 @@ func loadScaleLevel() ScalingLevel {
 	}
 }
 
-func PBAdmin() pocketbase.AdminAPI {
-	if globalConfig.pbAdminClient == nil {
-		globalConfig.pbAdminClient = pocketbase.NewPocketBase(globalConfig.PB.Address, nil)
-		globalConfig.pbAdminClient.AsAdmin().Admins().PasswordAuth(pocketbase.AdminPasswordBody{
-			Identity: globalConfig.PB.AdminIdentity,
-			Password: globalConfig.PB.AdminPassword,
-		})
+func AdminSurreal() (*surrealdb.DB, error) {
+	if globalConfig.surrealClient != nil {
+		return globalConfig.surrealClient, nil
 	}
-	return globalConfig.pbAdminClient.AsAdmin()
+	db, err := Surreal()
+	_, err2 := db.SignIn(&surrealdb.Auth{
+		Username: globalConfig.Surreal.AdminIdentity,
+		Password: globalConfig.Surreal.AdminPassword,
+	})
+	globalConfig.surrealClient = db
+	return db, errors.Join(err, err2)
+}
+
+func Surreal() (*surrealdb.DB, error) {
+	db, err := surrealdb.New(globalConfig.Surreal.Address)
+	err2 := db.Use(globalConfig.Surreal.Namespace, globalConfig.Surreal.Database)
+	return db, errors.Join(err, err2)
 }

@@ -1,15 +1,16 @@
 package auth
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"pandagame/internal/config"
 	"pandagame/internal/htmx/global"
-	"pandagame/internal/pocketbase"
 	"pandagame/internal/web"
 	"time"
 
 	_ "github.com/a-h/templ"
+	"github.com/surrealdb/surrealdb.go"
 )
 
 // /login
@@ -36,11 +37,13 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	form := r.PostForm
 	username := form.Get("username")
 	password := form.Get("password")
-	cfg := config.LoadAppConfig()
-	resp, err := pocketbase.NewPocketBase(cfg.PB.Address, nil).AsUser().Auth("players").PasswordAuth(pocketbase.AuthPasswordBody{
+	db, _ := config.Surreal()
+	token, err := db.SignIn(&surrealdb.Auth{
 		Username: username,
 		Password: password,
+		Access:   "user",
 	})
+
 	if err != nil {
 		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)
@@ -48,9 +51,9 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:  web.PandaGameCookie,
-		Value: resp.Token,
+		Value: token,
 	})
-	LoggedInForm(web.IDFromToken(resp.Token)).Render(r.Context(), w)
+	LoggedInForm(web.IDFromToken(token)).Render(r.Context(), w)
 }
 
 // /hmx/logout
@@ -73,14 +76,18 @@ func ApiSignUp(w http.ResponseWriter, r *http.Request) {
 	username := form.Get("username")
 	password := form.Get("password")
 	confirmPassword := form.Get("confirmPassword")
-	slog.Info("new sign up", slog.Any("postForm", form), slog.Any("form", r.Form))
-	_, err := config.PBAdmin().AdminAuth("players").Create(pocketbase.NewAuthRecord{
-		Credentials: pocketbase.NewAuthCredentials{
-			Username:        username,
-			Password:        password,
-			ConfirmPassword: confirmPassword,
-		},
-	}, nil)
+	if password != confirmPassword {
+		err := errors.New("passwords do not match")
+		AuthError(err.Error()).Render(r.Context(), w)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	db, _ := config.Surreal()
+	_, err := db.SignUp(&surrealdb.Auth{
+		Username: username,
+		Password: password,
+		Access:   "user",
+	})
 	if err != nil {
 		slog.Warn("Could not sign up new user", slog.String("error", err.Error()))
 		AuthError(err.Error()).Render(r.Context(), w)

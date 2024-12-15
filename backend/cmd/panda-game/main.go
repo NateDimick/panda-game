@@ -16,7 +16,7 @@ import (
 func main() {
 	config.SetLogger("panda-server.log")
 	appConfig := config.LoadAppConfig()
-	fw := framework.NewFramework(&engine.PandaGameEngine{PB: config.PBAdmin()})
+	fw := framework.NewFramework(new(engine.PandaGameEngine))
 	fw.Configure(func(fc *framework.FrameworkConfig) {
 		// TODO
 		fc.Groups = scaling.Grouper(appConfig)

@@ -47,5 +47,5 @@ func IDFromToken(token string) string {
 	if err := json.NewDecoder(bytes.NewReader(raw)).Decode(&claims); err != nil {
 		return ""
 	}
-	return claims["id"].(string)
+	return claims["ID"].(string)
 }

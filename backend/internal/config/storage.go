@@ -1,9 +1,11 @@
 package config
 
-type PocketBaseConfig struct {
+type SurrealConfig struct {
 	Address       string
 	AdminIdentity string
 	AdminPassword string
+	Namespace     string
+	Database      string
 }
 
 type NatsConfig struct {
