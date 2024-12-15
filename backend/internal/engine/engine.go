@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -10,9 +9,7 @@ import (
 	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"pandagame/internal/web"
-	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/surrealdb/surrealdb.go"
 	"github.com/surrealdb/surrealdb.go/pkg/models"
@@ -33,62 +30,6 @@ type GameRecord struct {
 	GID   string           `json:"gameId"`
 	State *game.GameState  `json:"state"`
 	Lobby game.Lobby       `json:"lobby"`
-}
-
-func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
-	msg := new(ClientEventShell)
-	if err := json.NewDecoder(strings.NewReader(raw)).Decode(msg); err != nil {
-		return "", nil, err
-	}
-	var payload any
-	decodeJson := false
-	switch ClientEventType(msg.MessageType) {
-	case CreateGame, Matchmake, CancelMatchmake:
-		payload = ""
-	case JoinGame, LeaveGame, StartGame, Reprompt:
-		payload = string(msg.Message) // this is always the game id
-	case GameChat:
-		payload = new(game.ChatMessage)
-		decodeJson = true
-	case TakeAction:
-		payload = new(game.PromptResponse)
-		decodeJson = true
-	case ChangeSettings:
-		// TODO will be json
-	default:
-		return "", nil, fmt.Errorf("invalid message type: %s", msg.MessageType)
-	}
-	if decodeJson {
-		if err := json.NewDecoder(bytes.NewReader(msg.Message)).Decode(payload); err != nil {
-			return "", nil, err
-		}
-	}
-	return msg.MessageType, payload, nil
-}
-
-func MessageSerializer(messageType string, payload any, req *http.Request) (string, error) {
-	respType := chi.URLParam(req, "type")
-	switch respType {
-	case "json":
-		shell := ServerEventShell{
-			MessageType: messageType,
-			Message:     payload,
-		}
-		if cs, ok := payload.(game.ClientSafe); ok {
-			id := web.IDFromRequest(req)
-			safePayload := cs.ClientSafe(id)
-			shell.Message = safePayload
-		}
-		bb := bytes.NewBuffer(make([]byte, 0))
-		if err := json.NewEncoder(bb).Encode(shell); err != nil {
-			return "", err
-		}
-		return bb.String(), nil
-	case "htmx":
-		fallthrough
-	default:
-		return SerializeToHTML(messageType, payload)
-	}
 }
 
 func ConnectionAuthValidator(w http.ResponseWriter, r *http.Request) error {

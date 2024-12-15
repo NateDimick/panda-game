@@ -1,12 +1,13 @@
 module pandagame
 
-go 1.21
+go 1.23
 
 require (
 	github.com/a-h/templ v0.2.793
 	github.com/go-chi/chi v1.5.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.37.0
 	github.com/stretchr/testify v1.10.0
 	github.com/surrealdb/surrealdb.go v0.3.2
