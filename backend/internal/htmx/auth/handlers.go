@@ -45,8 +45,8 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	token, err := sign.In(username, password)
 
 	if err != nil {
-		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)
+		AuthError(err.Error()).Render(r.Context(), w)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -62,8 +62,12 @@ func ApiLogin(w http.ResponseWriter, r *http.Request) {
 // /hmx/logout
 func ApiLogout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:    web.PandaGameCookie,
-		Expires: time.Now().UTC().Add(-time.Hour * 72),
+		Name:     web.PandaGameCookie,
+		Expires:  time.Now().UTC().Add(-time.Hour * 72),
+		Value:    "",
+		Secure:   true,
+		HttpOnly: true,
+		Path:     "/",
 	})
 	LoginForm().Render(r.Context(), w)
 }
@@ -81,15 +85,15 @@ func ApiSignUp(w http.ResponseWriter, r *http.Request) {
 	confirmPassword := form.Get("confirmPassword")
 	if password != confirmPassword {
 		err := errors.New("passwords do not match")
-		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)
+		AuthError(err.Error()).Render(r.Context(), w)
 		return
 	}
 
 	if err := sign.Up(username, password); err != nil {
 		slog.Warn("Could not sign up new user", slog.String("error", err.Error()))
-		AuthError(err.Error()).Render(r.Context(), w)
 		w.WriteHeader(http.StatusBadRequest)
+		AuthError(err.Error()).Render(r.Context(), w)
 		return
 	}
 	AfterSignedUp().Render(r.Context(), w)

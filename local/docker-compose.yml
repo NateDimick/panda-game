@@ -7,7 +7,7 @@ services:
       - DB_ADDR=ws://surreal:8000
       - DB_HTTP_ADDR=http://surreal:8000
       - DB_ADMIN=pandaAdmin
-      - DB_ADMIN_PASS=strongpassword
+      - DB_PASS=strongpassword
       - DB_NS=pandaNS
       - DB_DB=pandaDB
       - NATS_ADDR=nats://nats:4222

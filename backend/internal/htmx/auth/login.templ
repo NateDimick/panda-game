@@ -13,7 +13,7 @@ templ Login(authenticated bool, username string) {
 }
 
 templ LoginForm() {
-    <form hx-post="/hmx/login" hx-target="#login-shell" hx-target-400="#login-error" hx-swap="innerHTML">
+    <form hx-post="/hmx/login" hx-target="#login-shell" hx-target-error="#login-error">
         <label for="login-username">Username</label>
         <input type="text" name="username" id="login-username"/>
         <label for="login-password">Password</label>

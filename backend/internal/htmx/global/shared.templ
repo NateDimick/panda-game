@@ -8,8 +8,8 @@ templ Page(title string, content templ.Component) {
         <head>
             <title>{ title }</title>
             <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
-            <script src="https://unpkg.com/htmx.org@2.0.3/dist/ext/response-targets.js"></script>
-            <script src="https://unpkg.com/htmx.org@2.0.3/dist/ext/ws.js"></script>
+            <script src="https://unpkg.com/htmx-ext-response-targets@2.0.0/response-targets.js"></script>
+            <script src="https://unpkg.com/htmx-ext-ws@2.0.1/ws.js"></script>
         </head>
         <body>
             @content

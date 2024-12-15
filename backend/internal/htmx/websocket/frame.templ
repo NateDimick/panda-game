@@ -7,31 +7,33 @@ templ WSFrame() {
     // htmx:wsError - because it will probably happen
     // htmx:wsClose - see above, but less pessimisticly
     <script>
-        document.body.addEventListener("htmx:wsOpen", (detail) => {
-            console.log("websocket connected!", detail.event)
+        document.body.addEventListener("htmx:wsOpen", (event) => {
+            console.log("websocket connected!", event.detail)
             if (window.location.hash) {
                 // Send JoinGame
-                detail.socketWrapper.send(JSON.stringify({
+                console.log("Joining game", window.location.hash)
+                event.detail.socketWrapper.send(JSON.stringify({
                     MessageType: "JoinGame",
                     Message: window.location.hash
                 }))
             } else {
                 // Send CreateGame
-                detail.socketWrapper.send(JSON.stringify({
+                console.log("creating a new game")
+                event.detail.socketWrapper.send(JSON.stringify({
                     MessageType: "CreateGame",
                     Message: ""
                 }))
             }
         })
-        document.body.addEventListener("htmx:wsConfigSend", (detail) => {
+        document.body.addEventListener("htmx:wsConfigSend", (event) => {
             // TODO: modify data to format that the server expects
-            console.log("Config Send Event", detail)
+            console.log("Config Send Event", event.detail)
         })        
-        document.body.addEventListener("htmx:wsError", (detail) => {
-            console.log("websocket error!", detail.error)
+        document.body.addEventListener("htmx:wsError", (event) => {
+            console.log("websocket error!", event.detail.error)
         })        
-        document.body.addEventListener("htmx:wsClose", (detail) => {
-            console.log("websocket closed!", detail.event)
+        document.body.addEventListener("htmx:wsClose", (event) => {
+            console.log("websocket closed!", event.detail.event)
         })
     </script>
     <div hx-ext="ws" ws-connect="/wss/htmx">

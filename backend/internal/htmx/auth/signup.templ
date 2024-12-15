@@ -13,7 +13,7 @@ templ SignUp(authenticated bool, username string) {
 }
 
 templ SignUpForm() {
-    <form hx-post="/hmx/signup" hx-target="#signup-shell" hx-target-400="#signup-error" hx-swap="innerHTML">
+    <form hx-post="/hmx/signup" hx-target="#signup-shell" hx-target-error="#signup-error">
         <label for="signup-username">Username</label>
         <input type="text" name="username" id="signup-username"/>
         <label for="signup-password">Password</label>
