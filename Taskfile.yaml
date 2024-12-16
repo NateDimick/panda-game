@@ -16,7 +16,7 @@ tasks:
       - test -d .build
   build:
     desc: compile the backend server application
-    deps: [build-dir, templ]
+    deps: [build-dir, templ, tailwind]
     dir: backend
     cmds:
       - go build -o .build/panda-game-server cmd/panda-game/main.go
@@ -43,6 +43,15 @@ tasks:
       - ./**/*.templ
     generates:
       - ./**/*_templ.go
+  tailwind:
+    desc: generate tailwind css
+    cmds: 
+      - tailwindcss -i ./backend/internal/htmx/style/input.css -o ./backend/internal/htmx/style/output.css --minify
+    sources:
+      - ./**/*.templ
+      - ./**/*.css
+    generates: 
+      - ./backend/internal/htmx/style/output.css
   unit-test:
     desc: run unit tests
     aliases: [ut, test]
@@ -71,7 +80,7 @@ tasks:
       - docker pull alpine
   server-docker:
     desc: build docker image for game server
-    deps: [templ]
+    deps: [templ, tailwind]
     cmds:
       - docker build -f docker/server.dockerfile -t panda-game-server:latest .
     sources:
