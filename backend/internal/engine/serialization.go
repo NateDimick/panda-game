@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"pandagame/internal/web"
+	"reflect"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -46,9 +49,6 @@ func MessageDeserializer(raw string, req *http.Request) (string, any, error) {
 
 func MessageSerializer(messageType string, payload any, req *http.Request) (string, error) {
 	respType := chi.URLParam(req, "type")
-	if p, ok := payload.(map[string]any); ok {
-		payload = handleMapPayload(messageType, p)
-	}
 	switch respType {
 	case "json":
 		shell := ServerEventShell{
@@ -72,40 +72,39 @@ func MessageSerializer(messageType string, payload any, req *http.Request) (stri
 	}
 }
 
-// convert map to type
-// to be clear, I'd rather not use mapstructure, it's kinda a bandaid for bad deserialization upstream
-func handleMapPayload(messageType string, payload map[string]any) any {
-	mt := ServerEventType(messageType)
-	dcfg := &mapstructure.DecoderConfig{TagName: "json", IgnoreUntaggedFields: true}
+// ensure payloads contain specific structs for various event types
+func StructMiddleware(e framework.Event, r *http.Request) (framework.Event, error) {
+	mt := ServerEventType(e.Type)
 	switch mt {
 	case LobbyUpdate:
-		l := new(game.Lobby)
-		dcfg.Result = l
-		d, _ := mapstructure.NewDecoder(dcfg)
-		if err := d.Decode(payload); err != nil {
-			return nil
-		}
-		return l
-
+		e.Payload = structConverter[game.Lobby](e.Payload)
 	case GameStart, GameUpdate, GameOver:
-		g := new(game.GameState)
-		dcfg.Result = g
-		d, _ := mapstructure.NewDecoder(dcfg)
-		if err := d.Decode(payload); err != nil {
-			return nil
-		}
-		return g
-
+		e.Payload = structConverter[game.GameState](e.Payload)
 	case ActionPrompt:
-		p := new(game.Prompt)
-		dcfg.Result = p
+		e.Payload = structConverter[game.Prompt](e.Payload)
+	default:
+
+	}
+	return e, nil
+}
+
+func structConverter[T any](payload any) T {
+	t := reflect.TypeOf(payload)
+	switch t.Kind() {
+	case reflect.Pointer:
+		return *payload.(*T)
+	case reflect.Struct:
+		return payload.(T)
+	case reflect.Map:
+		out := new(T)
+		dcfg := &mapstructure.DecoderConfig{TagName: "json", IgnoreUntaggedFields: true, Result: out}
 		d, _ := mapstructure.NewDecoder(dcfg)
 		if err := d.Decode(payload); err != nil {
-			return nil
+			slog.Warn("failed to convert map to struct")
 		}
-		return p
-
+		return *out
 	default:
-		return payload
+		slog.Warn("unsupported type")
+		panic("this shouldn't happen")
 	}
 }

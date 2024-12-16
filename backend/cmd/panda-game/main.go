@@ -27,6 +27,7 @@ func main() {
 		fc.ConnectHandler = engine.ConnectionAuthValidator
 		// disconnect handler - maybe unneeded?
 	})
+	fw.AddSendMiddleware(engine.StructMiddleware)
 	mux := chi.NewMux()
 	mux.Get("/wss/{type}", fw.ServeHTTP)
 	mux.Get("/wss", fw.ServeHTTP)

@@ -13,23 +13,23 @@ func SerializeToHTML(messageType string, payload any) (string, error) {
 	mt := ServerEventType(messageType)
 	switch mt {
 	case LobbyUpdate:
-		l, ok := payload.(*game.Lobby)
+		l, ok := payload.(game.Lobby)
 		if !ok {
 			return "", errors.New("bad lobby payload")
 		}
-		return serializeLobbyUpdate(*l)
+		return serializeLobbyUpdate(l)
 	case GameStart, GameUpdate, GameOver:
-		g, ok := payload.(*game.GameState)
+		g, ok := payload.(game.GameState)
 		if !ok {
 			return "", errors.New("bad game state payload")
 		}
-		return serializeGameState(*g)
+		return serializeGameState(g)
 	case ActionPrompt:
-		p, ok := payload.(*game.Prompt)
+		p, ok := payload.(game.Prompt)
 		if !ok {
 			return "", errors.New("bad prompt payload")
 		}
-		return serializeActionPrompt(*p)
+		return serializeActionPrompt(p)
 	case Goodbye:
 		return serializeGoodbye()
 	case Warning:

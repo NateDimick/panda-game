@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"encoding/json"
+	"pandagame/internal/framework"
 	"pandagame/internal/game"
 	"testing"
 
@@ -13,27 +14,32 @@ func TestSerializationLoop(t *testing.T) {
 	// struct -> json -> map -> struct
 	cases := []struct {
 		MsgType string
-		payload any
+		Payload any
 	}{
-		{"LobbyUpdate", &game.Lobby{Host: "larry", Players: []string{"larry", "big bird"}}},
-		{"GameUpdate", &game.GameState{Board: &game.Board{Plots: map[string]game.Plot{"a": {Type: game.FuturePlot}}}}},
-		{"ActionPrompt", &game.Prompt{Action: game.ChooseGrowth, SelectType: game.PlotIDSelectType, SelectFrom: []any{"a", "b", "c"}}},
+		{"LobbyUpdate", game.Lobby{Host: "larry", Players: []string{"larry", "big bird"}}},
+		{"GameUpdate", game.GameState{Board: &game.Board{Plots: map[string]game.Plot{"a": {Type: game.FuturePlot}}}}},
+		{"ActionPrompt", game.Prompt{Action: game.ChooseGrowth, SelectType: game.PlotIDSelectType, SelectFrom: []any{"a", "b", "c"}}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.MsgType, func(tt *testing.T) {
 			bb := bytes.NewBuffer(make([]byte, 0))
-			json.NewEncoder(bb).Encode(tc.payload)
+			json.NewEncoder(bb).Encode(tc.Payload)
 			m := make(map[string]any)
 			json.NewDecoder(bb).Decode(&m)
-			result := handleMapPayload(tc.MsgType, m)
-			assert.Equal(tt, tc.payload, result)
+			event := framework.Event{
+				Type:    tc.MsgType,
+				Payload: m,
+			}
+			result, _ := StructMiddleware(event, nil)
+			assert.Equal(tt, tc.Payload, result.Payload)
 		})
 	}
 }
 
-func TestHandleMapPayload(t *testing.T) {
-	m := map[string]any{"GameId": "15c425c2-4f8b-48c7-b5f8-f57a4b4af806", "Host": "player:nate", "Players": []string{"player:nate"}, "Spectators": []string{}, "Started": false}
-	lu := handleMapPayload("LobbyUpdate", m)
-	update := lu.(*game.Lobby)
-	assert.Equal(t, update.GameId, m["GameId"])
+func TestStructConverter(t *testing.T) {
+	l := game.Lobby{Host: "beavis", Players: []string{"beavis", "butthead"}}
+	l2 := structConverter[game.Lobby](l)
+	assert.Equal(t, l, l2)
+	l3 := structConverter[game.Lobby](&l)
+	assert.Equal(t, l, l3)
 }
