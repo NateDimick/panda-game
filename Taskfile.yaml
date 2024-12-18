@@ -43,13 +43,26 @@ tasks:
       - ./**/*.templ
     generates:
       - ./**/*_templ.go
+  tailwind-dump:
+    desc: dump go-based tailwind classes to a file
+    dir: backend/cmd/tailwinddump
+    cmds: 
+      - go run main.go >> tailwind.dump
+      - mv tailwind.dump ../../../
+    sources:
+      - ./**/*.go
+    generates:
+      - ./tailwind.dump
   tailwind:
     desc: generate tailwind css
+    deps: [tailwind-dump]
     cmds: 
       - tailwindcss -i ./backend/internal/htmx/style/input.css -o ./backend/internal/htmx/style/output.css --minify
     sources:
+      - ./tailwind.config.js
       - ./**/*.templ
       - ./**/*.css
+      - ./tailwind.dump
     generates: 
       - ./backend/internal/htmx/style/output.css
   unit-test:

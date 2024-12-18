@@ -17,6 +17,7 @@ func AddHTMXRoutes(r chi.Router) {
 	// auth routes
 	r.Get("/login", auth.LoginPage)
 	r.Get("/signup", auth.SignUpPage)
+	r.Get("/logout", auth.LogoutRedirect)
 	r.Post("/hmx/signup", auth.ApiSignUp)
 	r.Post("/hmx/login", auth.ApiLogin)
 	r.Post("/hmx/logout", auth.ApiLogout)

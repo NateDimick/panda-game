@@ -3,7 +3,7 @@ package auth
 import "pandagame/internal/htmx/global"
 
 templ Login(authenticated bool, username string) {
-    <div id="login-shell" hx-ext="response-targets">
+    <div id="login-shell" hx-ext="response-targets" class={ global.Centered.Classes() }>
         if authenticated {
             @LoggedInForm(username)
         } else {
@@ -18,16 +18,18 @@ templ LoginForm() {
         <input type="text" name="username" id="login-username"/>
         <label for="login-password">Password</label>
         <input type="password" name="password" id="login-password"/>
-        <input type="submit" value="Login"/>
+        @global.SubmitButton("Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
     </form>
     <div id="login-error"></div>
-    @global.LinkButton("/signup", "No Account? Sign up here")
+    @global.LinkButton("/signup", "No Account? Sign up here", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
 }
 
 templ LoggedInForm(username string) {
-    Logged in as { username }
-    <button type="button" hx-post="/hmx/logout" hx-target="#login-shell" hx-swap="innerHTML">Log Out</button>
-    @global.LinkButton("/", "Return Home")
+    <p>Logged in as { username }</p>
+    <div class={ global.FlexContainer.Classes() }>
+        @global.HTMXButton("/hmx/logout", "Log Out", "#login-shell", "innerHTML", global.PinkBBTheme, global.ButtonBorder, global.ButtonSpacing)
+        @global.LinkButton("/", "Return Home", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+    </div>
 }
 
 templ AuthError(msg string) {

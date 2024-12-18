@@ -1,9 +1,7 @@
 package global
 
-import "strings"
-
-// the main page wrapper
-templ Page(title string, content templ.Component) {
+// the main page wrapper. Classes style the body element
+templ Page(title string, content templ.Component, ) {
     <html>
         <head>
             <title>{ title }</title>
@@ -12,19 +10,34 @@ templ Page(title string, content templ.Component) {
             <script src="https://unpkg.com/htmx-ext-ws@2.0.1/ws.js"></script>
             <link rel="stylesheet" href="/hmx/style.css"></link>
         </head>
-        <body>
+        <body class={ BodyContainer.Classes() }>
             @content
         </body>
     </html>
 }
 
 // a button that is also a hyperlink
-templ LinkButton(url string, text string, classes ...string) {
+templ LinkButton(url string, text string, classes ...Tailwinder) {
     <a href={ templ.URL(url) }>
-        <button type="button" class={ strings.Join(classes, " ") }>{ text }</button>
+        @Button(text, classes...)
     </a>
 }
 
-templ FunButton(text string, color string) {
-    
+
+templ Button(text string, classes ...Tailwinder) {
+    <button type="button" class={ CombineClasses(classes...) }>
+    { text }
+    </button>
+}
+
+templ SubmitButton(text string, classes ...Tailwinder) {
+    <button type="submit" class={ CombineClasses(classes...) }>
+    { text }
+    </button>
+}
+
+templ HTMXButton(url, text, target, swap string, classes ...Tailwinder) {
+    <button type="button" hx-post={ url } hx-target={ target } hx-swap={ swap } class={ CombineClasses(classes...) }>
+    { text }
+    </button>
 }

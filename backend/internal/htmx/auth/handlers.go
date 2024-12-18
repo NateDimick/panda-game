@@ -32,6 +32,19 @@ func SignUpPage(w http.ResponseWriter, r *http.Request) {
 	global.Page("Sign Up", SignUp(authenticated, web.IDFromToken(token))).Render(r.Context(), w)
 }
 
+// /logout
+func LogoutRedirect(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     web.PandaGameCookie,
+		Expires:  time.Now().UTC().Add(-time.Hour * 72),
+		Value:    "",
+		Secure:   true,
+		HttpOnly: true,
+		Path:     "/",
+	})
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
 // /hmx/login
 func ApiLogin(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {

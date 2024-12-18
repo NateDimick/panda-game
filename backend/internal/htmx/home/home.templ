@@ -3,17 +3,24 @@ package home
 import "pandagame/internal/htmx/global"
 
 templ HomePage(authenticated bool, username string) {
-    <h1>Welcome to Panda Game!</h1>
-    if authenticated {
-        <p>Hey, { username }, Let's Play!</p>
-        @global.LinkButton("/game", "Create Game")
-        <form hx-get="/join">
-            <input type="text" name="gameId" placeholder="game id">
-            <button type="submit">Join Game</button>
-        </form>
-    } else {
-        <p>You gotta log in to play</p>
-        @global.LinkButton("/login", "Login")
-        @global.LinkButton("/signup", "Sign Up")
-    }
+    <div class={ global.Centered.Classes() }>
+        <h1>Welcome to Panda Game!</h1>
+        if authenticated {
+            <p>Hey, { username }, Let's Play!</p>
+            <div class={ global.CombineClasses(global.ButtonBorder, global.PlainTheme, global.FlexContainer)}>
+                @global.LinkButton("/game", "Create Game", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                <form hx-get="/join">
+                    <input type="text" name="gameId" placeholder="game id">
+                    @global.SubmitButton("Join Game", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                </form>
+                @global.LinkButton("/logout", "Log Out", global.PinkBBTheme, global.ButtonBorder, global.ButtonSpacing)
+            </div>
+        } else {
+            <p>You gotta log in to play</p>
+            <div class={ global.FlexContainer.Classes() }>
+                @global.LinkButton("/login", "Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                @global.LinkButton("/signup", "Sign Up", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
+            </div>
+        }
+    </div>
 }

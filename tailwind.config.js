@@ -2,7 +2,8 @@
 // copied from https://github.com/Phillip-England/templ-quickstart/blob/main/tailwind.config.js
 module.exports = {
     content: [
-        "./internal/**/*.{go,js,templ,html}"
+        "./backend/**/*.templ",
+        "./tailwind.dump"
     ],
     theme: {
       extend: {

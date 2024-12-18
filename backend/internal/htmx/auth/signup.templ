@@ -20,12 +20,12 @@ templ SignUpForm() {
         <input type="password" name="password" id="signup-password"/>
         <label for="signup-confirm-password">Confirm Password</label>
         <input type="password" name="confirmPassword" id="signup-confirm-password"/>
-        <input type="submit" value="signup"/>
+        @global.SubmitButton("Sign Up", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
     </form>
-    <div id="signup-error"></div>
+    <div id="signup-error" class={ global.PinkBBTheme.Classes() }></div>
 }
 
 templ AfterSignedUp() {
     <p>Sign up complete!</p>
-    @global.LinkButton("/login", "Login")
+    @global.LinkButton("/login", "Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
 }

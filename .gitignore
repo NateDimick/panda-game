@@ -5,3 +5,5 @@ script-venv
 mock_*
 *_templ.go
 db_data
+tailwind.dump
+output.css
