@@ -8,18 +8,18 @@ templ HomePage(authenticated bool, username string) {
         if authenticated {
             <p>Hey, { username }, Let's Play!</p>
             <div class={ global.CombineClasses(global.ButtonBorder, global.PlainTheme, global.FlexContainer)}>
-                @global.LinkButton("/game", "Create Game", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                @global.LinkButton("/game", "Create Game", global.GreenBBTheme)
                 <form hx-get="/join">
                     <input type="text" name="gameId" placeholder="game id">
-                    @global.SubmitButton("Join Game", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                    @global.SubmitButton("Join Game", global.YellowBBTheme)
                 </form>
-                @global.LinkButton("/logout", "Log Out", global.PinkBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                @global.LinkButton("/logout", "Log Out", global.PinkBBTheme)
             </div>
         } else {
             <p>You gotta log in to play</p>
             <div class={ global.FlexContainer.Classes() }>
-                @global.LinkButton("/login", "Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
-                @global.LinkButton("/signup", "Sign Up", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
+                @global.LinkButton("/login", "Login", global.GreenBBTheme)
+                @global.LinkButton("/signup", "Sign Up", global.YellowBBTheme)
             </div>
         }
     </div>

@@ -13,31 +13,33 @@ templ Login(authenticated bool, username string) {
 }
 
 templ LoginForm() {
-    <form hx-post="/hmx/login" hx-target="#login-shell" hx-target-error="#login-error">
+    <form hx-post="/hmx/login" hx-target="#login-shell" hx-target-error="#auth-error">
         <label for="login-username">Username</label>
         <input type="text" name="username" id="login-username"/>
         <label for="login-password">Password</label>
         <input type="password" name="password" id="login-password"/>
-        @global.SubmitButton("Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+        @global.SubmitButton("Login", global.GreenBBTheme)
     </form>
-    <div id="login-error"></div>
-    @global.LinkButton("/signup", "No Account? Sign up here", global.YellowBBTheme, global.ButtonBorder, global.ButtonSpacing)
+    <div id="auth-error"></div>
+    @global.LinkButton("/signup", "No Account? Sign up here", global.YellowBBTheme)
 }
 
 templ LoggedInForm(username string) {
     <p>Logged in as { username }</p>
     <div class={ global.FlexContainer.Classes() }>
-        @global.HTMXButton("/hmx/logout", "Log Out", "#login-shell", "innerHTML", global.PinkBBTheme, global.ButtonBorder, global.ButtonSpacing)
-        @global.LinkButton("/", "Return Home", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+        @global.HTMXButton("/hmx/logout", "Log Out", "#login-shell", "innerHTML", global.PinkBBTheme)
+        @global.LinkButton("/", "Return Home", global.GreenBBTheme)
     </div>
 }
 
 templ AuthError(msg string) {
-    <h1>
-        ERROR
-    </h1>
-    <br>
-    <p>
-        { msg }
-    </p>
+    <div id="auth-error" class={ global.PinkBBTheme.Classes() }>
+        <h1>
+            ERROR
+        </h1>
+        <br>
+        <p>
+            { msg }
+        </p>
+    </div>
 }

@@ -25,19 +25,19 @@ templ LinkButton(url string, text string, classes ...Tailwinder) {
 
 
 templ Button(text string, classes ...Tailwinder) {
-    <button type="button" class={ CombineClasses(classes...) }>
+    <button type="button" class={ CombineClasses(append(classes, ButtonBorder, ButtonSpacing)...) }>
     { text }
     </button>
 }
 
 templ SubmitButton(text string, classes ...Tailwinder) {
-    <button type="submit" class={ CombineClasses(classes...) }>
+    <button type="submit" class={ CombineClasses(append(classes, ButtonBorder, ButtonSpacing)...) }>
     { text }
     </button>
 }
 
 templ HTMXButton(url, text, target, swap string, classes ...Tailwinder) {
-    <button type="button" hx-post={ url } hx-target={ target } hx-swap={ swap } class={ CombineClasses(classes...) }>
+    <button type="button" hx-post={ url } hx-target={ target } hx-swap={ swap } class={ CombineClasses(append(classes, ButtonBorder, ButtonSpacing)...) }>
     { text }
     </button>
 }

@@ -13,19 +13,19 @@ templ SignUp(authenticated bool, username string) {
 }
 
 templ SignUpForm() {
-    <form hx-post="/hmx/signup" hx-target="#signup-shell" hx-target-error="#signup-error">
+    <form hx-post="/hmx/signup" hx-target="#signup-shell" hx-target-error="#auth-error">
         <label for="signup-username">Username</label>
         <input type="text" name="username" id="signup-username"/>
         <label for="signup-password">Password</label>
         <input type="password" name="password" id="signup-password"/>
         <label for="signup-confirm-password">Confirm Password</label>
         <input type="password" name="confirmPassword" id="signup-confirm-password"/>
-        @global.SubmitButton("Sign Up", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+        @global.SubmitButton("Sign Up", global.GreenBBTheme)
     </form>
-    <div id="signup-error" class={ global.PinkBBTheme.Classes() }></div>
+    <div id="auth-error"></div>
 }
 
 templ AfterSignedUp() {
     <p>Sign up complete!</p>
-    @global.LinkButton("/login", "Login", global.GreenBBTheme, global.ButtonBorder, global.ButtonSpacing)
+    @global.LinkButton("/login", "Login", global.GreenBBTheme)
 }

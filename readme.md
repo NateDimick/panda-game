@@ -14,7 +14,7 @@ A bamboo gardening game like *Takenoko*, in your browser! That's the goal.
 
 ### Frontend
 
-* htmx + templ + tailwind (probably) + [pixi.js](https://github.com/pixijs/pixijs) (probably)
+* htmx + templ + tailwind + [pixi.js](https://github.com/pixijs/pixijs) (probably)
 
 ## Tools
 
@@ -22,3 +22,6 @@ A bamboo gardening game like *Takenoko*, in your browser! That's the goal.
 * covreport `go install github.com/cancue/covreport@latest`
 * Mockery `go install github.com/vektra/mockery/v2@latest`
 * Templ `go install github.com/a-h/templ/cmd/templ@latest`
+* tailwindcss
+  * download from here: <http://github.com/tailwindlabs/tailwindcss/releases/latest>
+  * extract the binary to somewhere on your path and name it tailwindcss
